@@ -26,4 +26,8 @@ ShowDEQSystemStructure[DEQs, fields]
 
 SsFieldAndDerivs = {Ss[t,u], D[Ss[t,u],u], D[Ss[t,u],u,u]};
 
-SsCoefficients = Coefficient[DEQs[[1]], SsFieldAndDerivs]
+SsCoefficients = Coefficient[DEQs[[1]], SsFieldAndDerivs];
+
+(* Chebyshev Setup *)
+cGrid = ChebyshevSolver`Private`CGLGrid[0., 1., 25];
+cDerivMatrix = NDSolve`FiniteDifferenceDerivative[{1}, {cGrid}]["DifferentiationMatrix"];
