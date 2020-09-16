@@ -29,5 +29,12 @@ SsFieldAndDerivs = {Ss[t,u], D[Ss[t,u],u], D[Ss[t,u],u,u]};
 SsCoefficients = Coefficient[DEQs[[1]], SsFieldAndDerivs];
 
 (* Chebyshev Setup *)
-cGrid = ChebyshevSolver`Private`CGLGrid[0., 1., 25];
-cDerivMatrix = NDSolve`FiniteDifferenceDerivative[{1}, {cGrid}]["DifferentiationMatrix"];
+{cGrid, DerivMatrix} = ChebyshevSolver`Private`ChebyshevSetup[0., 1., 25];
+
+
+
+
+
+(* Plot and Export for Viewing *)
+plot = MatrixPlot[DerivMatrix];
+Export["../TmpPlots/plot.png", plot]
