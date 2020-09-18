@@ -1,13 +1,11 @@
 (* USE CHEBYSHEV SOLVER *)
 #!/usr/bin/env wolframscript
 
-<<"../source/ChebyshevSolver.wl"
-
 (*<<"../../MBI-Resurgence/source/DeriveEinsteinEquationsFollowingCartwright.wl"
-
 <<"../../MBI-Resurgence/source/NumericalPart.wl"
-
 <<"../../MathematicaPackagesGit/DEQSystemStrucutureVisualization/source/DEQSystemStructureVisualization.wl"*)
+
+<<"../source/ChebyshevSolver.wl"
 
 DEQ = 1 + f[x] +  2 f''[x] == 0 ;
 bc1 = f[0] == 0;
