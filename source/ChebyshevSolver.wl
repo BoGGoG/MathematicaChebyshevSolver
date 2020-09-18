@@ -51,10 +51,12 @@ ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Interva
 	{chebyshevPoints, DCheb}
 ];
 
-ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}] := Block[{DEQ, BCs},
+Options[ChebyNDSolve] = {"GridPoints" -> 25};
+
+ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{DEQ, BCs},
 	DEQ = DEQAndBCs[[1]];
 	BCs = DEQAndBCs[[2;;]];
-	Print[BCs]
+	Print[OptionValue["GridPoints"]]
 ]
 
 
