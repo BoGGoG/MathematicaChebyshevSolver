@@ -51,6 +51,12 @@ ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Interva
 	{chebyshevPoints, DCheb}
 ];
 
+ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}] := Block[{DEQ, BCs},
+	DEQ = DEQAndBCs[[1]];
+	BCs = DEQAndBCs[[2;;]];
+	Print[BCs]
+]
+
 
 (* END OF FUNCTIONS *)
 

@@ -1,5 +1,5 @@
+(* USE CHEBYSHEV SOLVER *)
 #!/usr/bin/env wolframscript
-(* ::Package:: *)
 
 <<"../source/ChebyshevSolver.wl"
 
@@ -10,11 +10,13 @@
 <<"../../MathematicaPackagesGit/DEQSystemStrucutureVisualization/source/DEQSystemStructureVisualization.wl"*)
 
 DEQ = f[x] + f''[x] ;
+bc1 = f[0] == 0;
+bc2 = f[1] == 0;
 chebPoints = 25;
 x0 = -3.;
 x1 = 3.;
 
-ChebyshevSolver`ChebyNDSolve[{DEQ, a, b}, f, {x,x0,x1}]
+ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}]
 
 (* Plot and Export for Viewing *)
 plot = MatrixPlot[DerivMatrix];
