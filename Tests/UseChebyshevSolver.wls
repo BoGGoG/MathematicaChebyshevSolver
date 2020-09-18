@@ -16,6 +16,7 @@ x1 = 3.;
 
 ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}]
 
+
 (* Plot and Export for Viewing *)
 plot = MatrixPlot[DerivMatrix];
 Export["../TmpPlots/plot.png", plot]
