@@ -1,3 +1,4 @@
+(* TEST CHEBYSHEV SOLVER *)
 #!/usr/bin/env wolframscript
 (* ::Package:: *)
 
