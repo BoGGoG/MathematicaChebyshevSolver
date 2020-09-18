@@ -3,23 +3,57 @@ BeginPackage["ChebyshevSolver`"];
 Unprotect["ChebyshevSolver`*"];
 ClearAll["ChebyshevSolver`*", "ChebyshevSolver`Private`*"];
 
-Begin["`Private`"];
+(* Begin["`Private`"]; *)
 
 examplefunction[]:=Print["Hello World!"]
 
 StripArgument[expr_, arg_] := expr /. f_[xx___, arg, yy___] -> f[xx, yy];
 
-CGLGrid[x0_, L_, n_Integer /; n > 1] :=
- x0 + 1/2 L (1 -  Cos[\[Pi] Range[0, n - 1]/(n - 1)])
+ChebyshevPoints[nz_, OptionsPattern["NumberOfDigits"->MachinePrecision]] := Block[{numberOfDigits},
+numberOfDigits = OptionValue["NumberOfDigits"];
+N[Table[Cos[(r \[Pi])/nz],{r,0,nz}], numberOfDigits]
+];
 
-ChebyshevSetup[x0_, L_, n_Integer /; n > 1] := Block[{cGrid, DerivMatrix},
-	cGrid = CGLGrid[x0, L, n];
-	DerivMatrix = NDSolve`FiniteDifferenceDerivative[{1}, {cGrid}]["DifferentiationMatrix"];
-	{cGrid, DerivMatrix}
-]
+ChebDerivMatrixDiag[nz_, chebyshevPoints_] :=
+Block[{firstDiag, lastDiag},
+firstDiag = (2(nz+1-1)^2+1)/6;
+lastDiag = -firstDiag;
+DiagonalMatrix[Join[{firstDiag}, Map[-#/(2(1-#^2))&, chebyshevPoints[[2;;-2]]], {lastDiag}]]
+];
+
+ChebDerivMatrixOffDiag[nz_, chebyshevPoints_] := Table[
+If[i!=j,(-1)^(i+j)/(chebyshevPoints[[i]]-chebyshevPoints[[j]]) If[i==1||i==nz+1,2,1]/If[j==1||j==nz+1,2,1],0],
+{i,nz+1},{j,nz+1}];
+
+ChebyshevPointsIfNotGiven[nz_,chebPointsGiven_, numberOfDigits_:MachinePrecision] :=  If[TrueQ[chebPointsGiven], ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits], chebPointsGiven];
+
+ChebDerivMatrix[nz_, OptionsPattern[{"ChebyshevPoints"->True,"NumberOfDigits"->MachinePrecision}]] := Block[{chebyshevPoints,firstDiag, lastDiag, diagMatrix,offDiag},
+
+chebyshevPoints =ChebyshevPointsIfNotGiven[nz, OptionValue["ChebyshevPoints"], OptionValue["NumberOfDigits"]];
+
+diagMatrix = ChebDerivMatrixDiag[nz, chebyshevPoints];
+offDiag = ChebDerivMatrixOffDiag[nz, chebyshevPoints];
+
+diagMatrix + offDiag
+];
+
+TransformChebIntervall[chebyshevPoints_, {a_,b_}] := chebyshevPoints*(a-b)/2+(a+b)/2;
+(* using fact that it's symmetric to it's mid *)
+
+TransformDCheb[DCheb_, {a_, b_}] := DCheb*2/(a-b);
+
+ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Intervall"->{1,-1}}]]:=Block[{numberOfDigits, a,b, chebyshevPoints, DCheb},
+numberOfDigits = OptionValue["NumberOfDigits"];
+{a,b} = OptionValue["Intervall"];chebyshevPoints = ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits];DCheb =  ChebDerivMatrix[nz,"ChebyshevPoints"-> chebyshevPoints];
+If[{a,b}!={1,-1},
+chebyshevPoints = TransformChebIntervall[chebyshevPoints, {a,b}];
+DCheb = TransformDCheb[DCheb, {a,b}]];
+
+{chebyshevPoints, DCheb}
+];
 
 Scan[SetAttributes[#, {Protected, ReadProtected}]&,
      Select[Symbol /@ Names["NumericalPart`*"], Head[#] === Symbol &]];
 
-End[];
+(*End[];*)
 EndPackage[];

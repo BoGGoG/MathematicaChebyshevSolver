@@ -15,7 +15,7 @@
 DEQs = Import[FileNameJoin[{"..","Equations", "EFEsFinal.m"}]];
 fieldsLambdas = {Bs, Ss, dplusSs, dplusBs, As};
 fields = Through[fieldsLambdas[t,u]];
-fieldsStriped = ChebyshevSolver`Private`StripArgument[fields, t];
+fieldsStriped = ChebyshevSolver`StripArgument[fields, t];
 fieldsAllDerivatives = Map[AllUpToNthDerivatives[#, 2]&, fieldsStriped];
 
 maxDerivative = 2;
@@ -29,8 +29,9 @@ SsFieldAndDerivs = {Ss[t,u], D[Ss[t,u],u], D[Ss[t,u],u,u]};
 SsCoefficients = Coefficient[DEQs[[1]], SsFieldAndDerivs];
 
 (* Chebyshev Setup *)
-{cGrid, DerivMatrix} = ChebyshevSolver`Private`ChebyshevSetup[0., 1., 25];
+{cGrid, DerivMatrix} = ChebyshevSolver`ChebyshevSetup[0., 1., 25];
 
+(* Build Operator *)
 
 
 
