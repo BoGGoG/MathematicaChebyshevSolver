@@ -56,8 +56,16 @@ Options[ChebyNDSolve] = {"GridPoints" -> 25};
 ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{DEQ, BCs},
 	DEQ = DEQAndBCs[[1]];
 	BCs = DEQAndBCs[[2;;]];
-	Print[OptionValue["GridPoints"]]
-]
+	order = GetDEQOrder[DEQ, f];
+	order
+];
+
+GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ, Not[FreeQ[#, Derivative[n][f][x]]] &];
+
+GetDEQOrder[DEQ_, f_] := Block[{},
+	0
+];
+
 
 
 (* END OF FUNCTIONS *)
