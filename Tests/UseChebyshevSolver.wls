@@ -16,8 +16,6 @@ chebPoints = 25;
 x0 = -3.;
 x1 = 3.;
 
-ChebyshevSolver`GetNthOrderTerm[DEQ, f, {x, 2}]
-
 ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}]
 
 (* Plot and Export for Viewing *)

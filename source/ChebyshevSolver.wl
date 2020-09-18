@@ -51,16 +51,19 @@ ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Interva
 	{chebyshevPoints, DCheb}
 ];
 
-Options[ChebyNDSolve] = {"GridPoints" -> 25};
+Options[ChebyNDSolve] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
 
 (* only for up to second order *)
-ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{DEQ, BCs},
+ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
+		{DEQ, BCs, nGrid},
 	DEQ = DEQAndBCs[[1]];
 	BCs = DEQAndBCs[[2;;]];
+	nGrid = OptionValue["GridPoints"];
+
+	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
 ];
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
-
 
 
 (* END OF FUNCTIONS *)
