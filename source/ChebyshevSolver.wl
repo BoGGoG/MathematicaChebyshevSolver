@@ -65,18 +65,55 @@ BuildDEQMatrixOperator[coeffs_, deriv_] := Block[{nGrid, derivTerms, n},
 
 HasDerivQ[expr_] := Not@FreeQ[expr, Derivative];
 
+(* ApplyDirichletBC: not an easy task:
+	- f[p] == y:
+		- find grid point closest to p
+		- set row in op corresponding to this grid point to be {0,...,1,0,0,...}
+		- give a "source" term {0,...,y,0,0,...}
+		- then op == source has f[p]==y as the row where p is
+	- f'[p] == y:
+*)
+ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, p, nGrid},
+	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
+	nGrid = Length@DEQOperator;
+	operator = DEQOperator;
+	bcRow = Table[0, nGrid];
+	rhs = Table[0, nGrid];
+
+	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyDirichletBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
+
+	If[pos == x0,
+		rhs[[1]] = bcVal;
+		bcRow[[1]] = 1;
+		operator[[1]] = bcRow;
+	];
+	If[pos == x1,
+		rhs[[-1]] = bcVal;
+		bcRow[[-1]] = 1;
+		operator[[-1]] = bcRow;
+	];
+	{operator, rhs}
+]
+
 (* assuming two boundary conditions, we only work with second order DEQs *)
-AddBoundaryCond[DEQOperator_, boundaryConditions_] := Block[{},
-	Print[boundaryConditions];
-	Print[Map[HasDerivQ[#]&, boundaryConditions]];
-	DEQOperator
+AddBoundaryCond[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}] := Block[{operator, rhs1, rhs2},
+	operator = DEQOperator;
+	If[Not@HasDerivQ[boundaryConditions[[1]]],
+		{operator, rhs1} = ApplyDirichletBC[operator, boundaryConditions[[1]], {x,x0,x1}];,
+		{operator, rhs1} = ApplyNeumannBC[operator, boundaryConditions[[1]], {x,x0,x1}];];
+
+	If[Not@HasDerivQ[boundaryConditions[[2]]],
+		{operator, rhs2} = ApplyDirichletBC[operator, boundaryConditions[[2]], {x,x0,x1}];,
+		{operator, rhs2} = ApplyNeumannBC[operator, boundaryConditions[[2]], {x,x0,x1}];];
+
+	{operator, rhs1+rhs2}
 ];
 
 Options[ChebyNDSolve] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
 
 (* only for up to second order ordinary DEQ *)
 ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
-		{DEQ, BCs, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator},
+		{DEQ, BCs, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhs},
 	DEQ = DEQAndBCs[[1]][[1]];
 	BCs = DEQAndBCs[[2;;]];
 	nGrid = OptionValue["GridPoints"];
@@ -86,7 +123,9 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, deriv];
-	DEQMatrixOperator = AddBoundaryCond[DEQMatrixOperator, BCs]
+	{DEQMatrixOperator, rhs} = AddBoundaryCond[DEQMatrixOperator, BCs, {x,x0,x1}];
+	Print[rhs];
+	DEQMatrixOperator
 ];
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
