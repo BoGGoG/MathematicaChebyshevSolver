@@ -7,6 +7,7 @@ ClearAll["ChebyshevSolver`*", "ChebyshevSolver`Private`*"];
 
 StripArgument[expr_, arg_] := expr /. f_[xx___, arg, yy___] -> f[xx, yy];
 
+(* build chebyshev grid *)
 ChebyshevPoints[nz_, OptionsPattern["NumberOfDigits"->MachinePrecision]] := Block[{numberOfDigits},
 	numberOfDigits = OptionValue["NumberOfDigits"];
 	N[Table[Cos[(r \[Pi])/nz],{r,0,nz}], numberOfDigits]
@@ -25,6 +26,7 @@ ChebDerivMatrixOffDiag[nz_, chebyshevPoints_] := Table[
 
 ChebyshevPointsIfNotGiven[nz_,chebPointsGiven_, numberOfDigits_:MachinePrecision] :=  If[TrueQ[chebPointsGiven], ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits], chebPointsGiven];
 
+(* build chebyshev grid derivative matrix *)
 ChebDerivMatrix[nz_, OptionsPattern[{"ChebyshevPoints"->True,"NumberOfDigits"->MachinePrecision}]] := Block[{chebyshevPoints,firstDiag, lastDiag, diagMatrix,offDiag},
 
 	chebyshevPoints = ChebyshevPointsIfNotGiven[nz, OptionValue["ChebyshevPoints"], OptionValue["NumberOfDigits"]];
@@ -40,6 +42,8 @@ TransformChebIntervall[chebyshevPoints_, {a_,b_}] := chebyshevPoints*(a-b)/2+(a+
 
 TransformDCheb[DCheb_, {a_, b_}] := DCheb*2/(a-b);
 
+(* build cheby grid and derivative matrix
+returns {grid, matrix} *)
 ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Intervall"->{1,-1}}]]:=Block[
 		{numberOfDigits, a,b, chebyshevPoints, DCheb},
 	numberOfDigits = OptionValue["NumberOfDigits"];
@@ -51,11 +55,22 @@ ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Interva
 	{chebyshevPoints, DCheb}
 ];
 
+(* given cheby derivative matrices and coefficients of the ODE, build operator L
+	such that L f = c f *)
 BuildDEQMatrixOperator[coeffs_, deriv_] := Block[{nGrid, derivTerms, n},
 	nGrid = Length@deriv;
 	derivTerms = Sum[coeffs[[n]] MatrixPower[deriv,n-1], {n,2,Length@coeffs}];
 	DEQMatrixOperator = coeffs[[1]] IdentityMatrix[nGrid] + derivTerms
 ]
+
+HasDerivQ[expr_] := Not@FreeQ[expr, Derivative];
+
+(* assuming two boundary conditions, we only work with second order DEQs *)
+AddBoundaryCond[DEQOperator_, boundaryConditions_] := Block[{},
+	Print[boundaryConditions];
+	Print[Map[HasDerivQ[#]&, boundaryConditions]];
+	DEQOperator
+];
 
 Options[ChebyNDSolve] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
 
@@ -70,7 +85,8 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	funcAndDerivs = Map[Derivative[#][f][x]&, {0,1,2}];
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 
-	DEQMatrixOperator == BuildDEQMatrixOperator[coeffs, deriv]
+	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, deriv];
+	DEQMatrixOperator = AddBoundaryCond[DEQMatrixOperator, BCs]
 ];
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];

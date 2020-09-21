@@ -9,14 +9,14 @@
 
 DEQ = 1 + f[x] +  2 f''[x] == 0 ;
 bc1 = f[0] == 0;
-bc2 = f[1] == 0;
-chebPoints = 25;
+bc2 = f'[1] == 0;
+chebPoints = 5;
 x0 = -3.;
 x1 = 3.;
 
-ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}]
+DerivMatrix = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 
 
 (* Plot and Export for Viewing *)
 plot = MatrixPlot[DerivMatrix];
-Export["../TmpPlots/plot.png", plot]
+Export["../TmpPlots/plot.png", DerivMatrix // MatrixForm]
