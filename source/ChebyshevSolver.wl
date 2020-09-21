@@ -95,6 +95,7 @@ ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, 
 	{operator, rhs}
 ]
 
+(* only works for one Neumann bc in the system, because it implements it always in row 2 *)
 ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, bcVal, nGrid, operator, rhs},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
 	nGrid = Length@DEQOperator;
@@ -104,12 +105,12 @@ ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, b
 	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyNeumannBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
 
 	If[pos == x0,
-		rhs[[1]] = bcVal;
+		rhs[[2]] = bcVal;
 		bcRow = derivMatrix[[1]];
 		operator[[2]] = bcRow;
 	];
 	If[pos == x1,
-		rhs[[-1]] = bcVal;
+		rhs[[2]] = bcVal;
 		bcRow = derivMatrix[[-1]];
 		operator[[2]] = bcRow;
 	];
