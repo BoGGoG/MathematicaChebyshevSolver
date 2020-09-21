@@ -13,7 +13,7 @@ bc2 = f[3.] == 13;
 chebPoints = 5;
 x0 = -3.;
 x1 = 3.;
-DerivMatrix = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+{DerivMatrix, rhs} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 
 
 (* Plot and Export for Viewing *)

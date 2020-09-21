@@ -95,16 +95,38 @@ ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, 
 	{operator, rhs}
 ]
 
+ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, bcVal, nGrid, operator, rhs},
+	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
+	nGrid = Length@DEQOperator;
+	operator = DEQOperator;
+	rhs = Table[0, nGrid];
+
+	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyNeumannBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
+
+	If[pos == x0,
+		rhs[[1]] = bcVal;
+		bcRow = derivMatrix[[1]];
+		operator[[2]] = bcRow;
+	];
+	If[pos == x1,
+		rhs[[-1]] = bcVal;
+		bcRow = derivMatrix[[-1]];
+		operator[[2]] = bcRow;
+	];
+
+	{operator, rhs}
+]
+
 (* assuming two boundary conditions, we only work with second order DEQs *)
-AddBoundaryCond[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}] := Block[{operator, rhs1, rhs2},
+AddBoundaryCond[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs1, rhs2},
 	operator = DEQOperator;
 	If[Not@HasDerivQ[boundaryConditions[[1]]],
 		{operator, rhs1} = ApplyDirichletBC[operator, boundaryConditions[[1]], {x,x0,x1}];,
-		{operator, rhs1} = ApplyNeumannBC[operator, boundaryConditions[[1]], {x,x0,x1}];];
+		{operator, rhs1} = ApplyNeumannBC[operator, boundaryConditions[[1]], {x,x0,x1}, derivMatrix];];
 
 	If[Not@HasDerivQ[boundaryConditions[[2]]],
 		{operator, rhs2} = ApplyDirichletBC[operator, boundaryConditions[[2]], {x,x0,x1}];,
-		{operator, rhs2} = ApplyNeumannBC[operator, boundaryConditions[[2]], {x,x0,x1}];];
+		{operator, rhs2} = ApplyNeumannBC[operator, boundaryConditions[[2]], {x,x0,x1}, derivMatrix];];
 
 	{operator, rhs1+rhs2}
 ];
@@ -123,9 +145,8 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, deriv];
-	{DEQMatrixOperator, rhs} = AddBoundaryCond[DEQMatrixOperator, BCs, {x,x0,x1}];
-	Print[rhs];
-	DEQMatrixOperator
+	{DEQMatrixOperator, rhs} = AddBoundaryCond[DEQMatrixOperator, BCs, {x,x0,x1}, deriv];
+	{DEQMatrixOperator, rhs}
 ];
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
