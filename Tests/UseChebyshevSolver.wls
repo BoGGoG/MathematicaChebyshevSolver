@@ -7,15 +7,15 @@
 
 <<"../source/ChebyshevSolver.wl"
 
-DEQ = f[x] + 2 f'[x] +  f''[x] == 0 ;
+DEQ = x f[x] + 2 f'[x] + Exp[x] f''[x] == 0 ;
 x0 = 0.;
 x1 = 2 Pi;
 bc1 = f[x0] == 0.;
 bc2 = f'[x0] == 1.;
 chebPoints = 15;
-
 {sol, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
-sol2[y_] = f[y]/.DSolve[{DEQ, bc1, bc2}, f, {x, x0, x1}][[1]]
+
+sol2[y_] = f[y]/.NDSolve[{DEQ, bc1, bc2}, f, {x, x0, x1}][[1]]
 
 
 (* Plot and Export for Viewing *)

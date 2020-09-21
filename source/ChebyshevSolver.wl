@@ -55,13 +55,44 @@ ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Interva
 	{chebyshevPoints, DCheb}
 ];
 
+ConstMatrixCoeff[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
+	If[order == 0,
+		coeff IdentityMatrix[Length@grid],
+		coeff * MatrixPower[deriv, n]
+	]
+]
+
+NonConstMatrixCoeff[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
+	If[order == 0,
+		DiagonalMatrix[coeff/.x->grid].IdentityMatrix[Length@grid],
+		DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]
+	]
+]
+
+BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
+	If[FreeQ[coeff, x],
+		ConstMatrixCoeff[coeff, x, {grid, deriv}, order],
+		NonConstMatrixCoeff[coeff, x, {grid, deriv}, order]
+	]
+];
+
 (* given cheby derivative matrices and coefficients of the ODE, build operator L
 	such that L f = c f *)
-BuildDEQMatrixOperator[coeffs_, deriv_] := Block[{nGrid, derivTerms, n},
-	nGrid = Length@deriv;
+BuildDEQMatrixOperator[coeffs_, x_, {grid_,deriv_}] := Block[{nGrid, coeffsOnGrid, derivTerms, n},
+	nGrid = Length@grid;
+	(*coeffsOnGrid = Map[DiagonalMatrix, coeffs/.x->grid];*)
+	(*
+	Print[coeffs];
+	If[Not@FreeQ[x, coeffs[[1]]],
+		Print["coeffs[1] hax x in it"]]
+	Print[coeffs/.x->grid];
+
 	derivTerms = Sum[coeffs[[n]] MatrixPower[deriv,n-1], {n,2,Length@coeffs}];
 	DEQMatrixOperator = coeffs[[1]] IdentityMatrix[nGrid] + derivTerms
-]
+	*)
+	DEQMatrixOperator = Sum[BuildDEQMatrixOrderN[coeffs[[n+1]], x, {grid, deriv}, n], {n,0,Length@coeffs-1}];
+	DEQMatrixOperator
+];
 
 HasDerivQ[expr_] := Not@FreeQ[expr, Derivative];
 
@@ -146,7 +177,7 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 	constantTerm = DEQ /.f->(0&);
 
-	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, deriv];
+	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv}];
 	{DEQMatrixOperator, rhs} = AddBoundaryCond[DEQMatrixOperator, BCs, {x,x0,x1}, deriv];
 	sol = LinearSolve[DEQMatrixOperator, rhs];
 	{sol, grid}
