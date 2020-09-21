@@ -7,16 +7,18 @@
 
 <<"../source/ChebyshevSolver.wl"
 
-DEQ = 1 + f[x] +  2 f''[x] == 0 ;
-bc1 = f[-3.] == 42;
-bc2 = f'[3.] == 13;
-chebPoints = 5;
-x0 = -3.;
-x1 = 3.;
-{DerivMatrix, rhs} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+DEQ = f[x] +  f''[x] == 0 ;
+bc1 = f[0.] == 0;
+bc2 = f'[0.] == 1;
+chebPoints = 15;
+x0 = 0.;
+x1 = 3.14.;
+{DEQMatrixOperator, rhs, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 
-rhs
+sol = LinearSolve[DEQMatrixOperator, rhs];
+sol2[y_] = f[y]/.NDSolve[{DEQ==0, f[x0] == 1, f[x1] == 2}, f, {x, x0, x1}][[1]]
 
 (* Plot and Export for Viewing *)
-plot = MatrixPlot[DerivMatrix];
-Export["../TmpPlots/plot.png", DerivMatrix // MatrixForm]
+plot = ListPlot[Thread@{grid, sol}];
+Export["../TmpPlots/plot.png", plot]
+(* Export["../TmpPlots/plot.png", DerivMatrix // MatrixForm] *)

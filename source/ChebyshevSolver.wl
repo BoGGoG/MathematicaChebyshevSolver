@@ -134,9 +134,9 @@ AddBoundaryCond[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}, derivMatrix_]
 
 Options[ChebyNDSolve] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
 
-(* only for up to second order ordinary DEQ *)
+(* only for up to second order ordinary linear DEQ *)
 ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
-		{DEQ, BCs, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhs},
+		{DEQ, BCs, constantTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhs},
 	DEQ = DEQAndBCs[[1]][[1]];
 	BCs = DEQAndBCs[[2;;]];
 	nGrid = OptionValue["GridPoints"];
@@ -144,10 +144,11 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
 	funcAndDerivs = Map[Derivative[#][f][x]&, {0,1,2}];
 	coeffs = Coefficient[DEQ, funcAndDerivs];
+	constantTerm = DEQ /.f->(0&);
 
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, deriv];
 	{DEQMatrixOperator, rhs} = AddBoundaryCond[DEQMatrixOperator, BCs, {x,x0,x1}, deriv];
-	{DEQMatrixOperator, rhs}
+	{DEQMatrixOperator, rhs, grid}
 ];
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
