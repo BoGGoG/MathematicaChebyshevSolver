@@ -26,24 +26,26 @@ ChebDerivMatrixOffDiag[nz_, chebyshevPoints_] := Table[
 
 ChebyshevPointsIfNotGiven[nz_,chebPointsGiven_, numberOfDigits_:MachinePrecision] :=  If[TrueQ[chebPointsGiven], ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits], chebPointsGiven];
 
-(* build chebyshev grid derivative matrix *)
-ChebDerivMatrix[nz_, OptionsPattern[{"ChebyshevPoints"->True,"NumberOfDigits"->MachinePrecision}]] := Block[{chebyshevPoints,firstDiag, lastDiag, diagMatrix,offDiag},
+(* build derivative matrix for chebyshev grid *)
+ChebDerivMatrix[nz_, OptionsPattern[{"ChebyshevPoints"->True,"NumberOfDigits"->MachinePrecision}]] := Block[
+		{chebyshevPoints,firstDiag, lastDiag, diagMatrix,offDiag},
 
-	chebyshevPoints = ChebyshevPointsIfNotGiven[nz, OptionValue["ChebyshevPoints"], OptionValue["NumberOfDigits"]];
+	chebyshevPoints = ChebyshevPointsIfNotGiven[nz, OptionValue["ChebyshevPoints"],
+		OptionValue["NumberOfDigits"]];
 
 	diagMatrix = ChebDerivMatrixDiag[nz, chebyshevPoints];
 	offDiag = ChebDerivMatrixOffDiag[nz, chebyshevPoints];
-
 	diagMatrix + offDiag
 ];
 
+(* transform from [-1,1] to [a,b] *)
 TransformChebIntervall[chebyshevPoints_, {a_,b_}] := chebyshevPoints*(a-b)/2+(a+b)/2;
-(* using fact that it's symmetric to it's mid *)
 
+(* transform from [-1,1] to [a,b] *)
+TransformChebIntervall[chebyshevPoints_, {a_,b_}] := chebyshevPoints*(a-b)/2+(a+b)/2;
 TransformDCheb[DCheb_, {a_, b_}] := DCheb*2/(a-b);
 
-(* build cheby grid and derivative matrix
-returns {grid, matrix} *)
+(* build cheby grid and derivative matrix returns {grid, matrix} *)
 ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Intervall"->{1,-1}}]]:=Block[
 		{numberOfDigits, a,b, chebyshevPoints, DCheb},
 	numberOfDigits = OptionValue["NumberOfDigits"];
@@ -55,24 +57,16 @@ ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Interva
 	{chebyshevPoints, DCheb}
 ];
 
-ConstMatrixCoeff[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
-	If[order == 0,
-		coeff IdentityMatrix[Length@grid],
-		coeff * MatrixPower[deriv, n]
-	]
-]
-
-NonConstMatrixCoeff[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
-	If[order == 0,
-		DiagonalMatrix[coeff/.x->grid].IdentityMatrix[Length@grid],
-		DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]
-	]
-]
+(* somehow SquareMatrix[m, 0] gives error when m singular, but should be identity *)
+Unprotect[MatrixPower];
+MatrixPower[m_?SquareMatrixQ, 0] := IdentityMatrix[Length@m];
+Protect[MatrixPower];
 
 BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
+	Print[coeff];
 	If[FreeQ[coeff, x],
-		ConstMatrixCoeff[coeff, x, {grid, deriv}, order],
-		NonConstMatrixCoeff[coeff, x, {grid, deriv}, order]
+		coeff * MatrixPower[deriv, order],
+		DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]
 	]
 ];
 
@@ -80,29 +74,18 @@ BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
 	such that L f = c f *)
 BuildDEQMatrixOperator[coeffs_, x_, {grid_,deriv_}] := Block[{nGrid, coeffsOnGrid, derivTerms, n},
 	nGrid = Length@grid;
-	(*coeffsOnGrid = Map[DiagonalMatrix, coeffs/.x->grid];*)
-	(*
-	Print[coeffs];
-	If[Not@FreeQ[x, coeffs[[1]]],
-		Print["coeffs[1] hax x in it"]]
-	Print[coeffs/.x->grid];
-
-	derivTerms = Sum[coeffs[[n]] MatrixPower[deriv,n-1], {n,2,Length@coeffs}];
-	DEQMatrixOperator = coeffs[[1]] IdentityMatrix[nGrid] + derivTerms
-	*)
 	DEQMatrixOperator = Sum[BuildDEQMatrixOrderN[coeffs[[n+1]], x, {grid, deriv}, n], {n,0,Length@coeffs-1}];
 	DEQMatrixOperator
 ];
 
 HasDerivQ[expr_] := Not@FreeQ[expr, Derivative];
 
-(* ApplyDirichletBC: not an easy task:
+(* ApplyDirichletBC (f[p] == y): not an easy task:
 	- f[p] == y:
 		- find grid point closest to p
 		- set row in op corresponding to this grid point to be {0,...,1,0,0,...}
 		- give a "source" term {0,...,y,0,0,...}
 		- then op == source has f[p]==y as the row where p is
-	- f'[p] == y:
 *)
 ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, p, nGrid},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
@@ -126,7 +109,7 @@ ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, 
 	{operator, rhs}
 ]
 
-(* only works for one Neumann bc in the system, because it implements it always in row 2 *)
+(* f'[p] == y. Only works for one Neumann bc in the system, because it implements it always in row 2 *)
 ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, bcVal, nGrid, operator, rhs},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
 	nGrid = Length@DEQOperator;
@@ -163,6 +146,8 @@ AddBoundaryCond[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}, derivMatrix_]
 	{operator, rhs1+rhs2}
 ];
 
+ListDerivs[f_, x_, nMax_] := Map[Derivative[#][f][x]&, Range[0,nMax]];
+
 Options[ChebyNDSolve] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
 
 (* only for up to second order ordinary linear DEQ *)
@@ -173,7 +158,7 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	nGrid = OptionValue["GridPoints"];
 
 	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
-	funcAndDerivs = Map[Derivative[#][f][x]&, {0,1,2}];
+	funcAndDerivs = ListDerivs[f, x, 2];
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 	constantTerm = DEQ /.f->(0&);
 
