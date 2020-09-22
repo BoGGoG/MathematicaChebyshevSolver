@@ -118,7 +118,7 @@ HasDerivQ[expr_] := Not@FreeQ[expr, Derivative];
 		- give a "source" term {0,...,y,0,0,...}
 		- then op == source has f[p]==y as the row where p is
 *)
-ApplyDirichletBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, p, nGrid},
+ApplyDirichletBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, p, y, nGrid},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
 	nGrid = Length@DEQOperator;
 	operator = DEQOperator;
@@ -141,7 +141,7 @@ ApplyDirichletBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}] := Block[{operato
 ]
 
 (* f'[p] == y. Only works for one Neumann bc in the system, because it implements it always in row 2 *)
-ApplyNeumannBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, bcVal, nGrid, operator, rhs},
+ApplyNeumannBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{f, p, y, pos, bcVal, nGrid, operator, rhs},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
 	nGrid = Length@DEQOperator;
 	operator = DEQOperator;
@@ -219,6 +219,21 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
+
+CheckOrder[DEQ_, f_, x_, n_/;n>=0] := Block[{term},
+	term = GetNthOrderTerm[DEQ, f, {x, n}];
+
+	(* wanted to check if zero, but didn't work, so check if has f in it *)
+	If[Not@FreeQ[term, f],
+		n,
+		CheckOrder[DEQ, f, x, n -1]
+	]
+];
+
+Options[DEQOrder] = {"Start"->3};
+DEQOrder[DEQ_, f_, x_, OptionsPattern[]] := Block[{},
+	CheckOrder[DEQ, f, x, 3]
+];
 
 
 (* END OF FUNCTIONS *)
