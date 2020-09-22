@@ -14,6 +14,8 @@ bc2 = f'[x0] == + 1.5;
 chebPoints = 50;
 {sol, grid} = ChebyshevSolver`ChebyNDSolveRaw[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 
+ChebyshevSolver`DEQOrder[DEQ, f, x] == 2];
+
 solInterpolated = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 sol2[y_] = f[y]/.NDSolve[{DEQ, bc1, bc2}, f, {x, x0, x1}][[1]];
 (* Plot and Export for Viewing *)

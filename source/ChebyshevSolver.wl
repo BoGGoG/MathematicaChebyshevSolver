@@ -171,7 +171,6 @@ AddBoundaryCondition[{DEQOperator_, source_}, boundaryCondition_, {x_, x0_, x1_}
 	{operator, rhs}
 ];
 
-(* assuming two boundary conditions, we only work with second order DEQs *)
 AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, x1_}, derivMatrix_] := Block[
 		{operator, rhs, rhs1, rhs2, source},
 	operator = DEQOperator;
@@ -182,8 +181,8 @@ AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, 
 	];
 	rhs = source;
 
-	{operator, rhs} = AddBoundaryCondition[{operator, rhs}, boundaryConditions[[1]], {x,x0,x1}, derivMatrix];
-	{operator, rhs} = AddBoundaryCondition[{operator, rhs}, boundaryConditions[[2]], {x,x0,x1}, derivMatrix];
+	(* apply all boundary conditions to {operator, rhs} *)
+	Scan[({operator, rhs} = AddBoundaryCondition[{operator, rhs}, #, {x,x0,x1}, derivMatrix])&, boundaryConditions];
 
 	{operator, rhs}
 ];
