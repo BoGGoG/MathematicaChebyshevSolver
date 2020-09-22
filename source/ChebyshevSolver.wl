@@ -132,16 +132,20 @@ ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, b
 	{operator, rhs}
 ]
 
-(* assuming two boundary conditions, we only work with second order DEQs *)
-AddBoundaryCond[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs1, rhs2},
+AddBoundaryCondition[DEQOperator_, boundaryCondition_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs},
 	operator = DEQOperator;
-	If[Not@HasDerivQ[boundaryConditions[[1]]],
-		{operator, rhs1} = ApplyDirichletBC[operator, boundaryConditions[[1]], {x,x0,x1}];,
-		{operator, rhs1} = ApplyNeumannBC[operator, boundaryConditions[[1]], {x,x0,x1}, derivMatrix];];
+	If[Not@HasDerivQ[boundaryCondition],
+		{operator, rhs} = ApplyDirichletBC[operator, boundaryCondition, {x,x0,x1}];,
+		{operator, rhs} = ApplyNeumannBC[operator, boundaryCondition, {x,x0,x1}, derivMatrix];];
+	{operator, rhs}
+];
 
-	If[Not@HasDerivQ[boundaryConditions[[2]]],
-		{operator, rhs2} = ApplyDirichletBC[operator, boundaryConditions[[2]], {x,x0,x1}];,
-		{operator, rhs2} = ApplyNeumannBC[operator, boundaryConditions[[2]], {x,x0,x1}, derivMatrix];];
+(* assuming two boundary conditions, we only work with second order DEQs *)
+AddBoundaryConditions[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs1, rhs2},
+	operator = DEQOperator;
+
+	{operator, rhs1} = AddBoundaryCondition[operator, boundaryConditions[[1]], {x,x0,x1}, derivMatrix];
+	{operator, rhs2} = AddBoundaryCondition[operator, boundaryConditions[[2]], {x,x0,x1}, derivMatrix];
 
 	{operator, rhs1+rhs2}
 ];
