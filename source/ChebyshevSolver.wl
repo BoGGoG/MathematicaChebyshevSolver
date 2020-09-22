@@ -6,7 +6,9 @@ Institution: University of Alabama
 Date: 09/2020
 Description: This is a small package I wrote to solve a single ODE with a Chebyshev grid using
 	the pseudospectral method. Only works for second order linear ODEs.
-	The main function is `ChebyshevSolver`ChebyNDSolve.
+	The main functions are `ChebyshevSolver`ChebyNDSolve and `ChebyshevSolver`ChebyNDSolveRaw.
+	The former one does exactly what the raw one does, but returns a function object by interpolating
+	the solultion.
 Usage: {sol, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 	- DEQ: the differential equation
 	- bc1, bc2: boundary conditions. Right now they are only working at x0 or x1, but you can supply a funciton value or a derivative value there
@@ -21,6 +23,10 @@ Example:
 	chebPoints = 100;
 	{sol, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 	plotCheb = ListPlot[Thread[{grid, sol}]];
+
+	For the interpolated output:
+	solInterpolated = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+	plotInterpolated = Plot[solInterpolated[x], {x,x0,x1}];
 *)
 
 BeginPackage["ChebyshevSolver`"];
