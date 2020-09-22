@@ -191,7 +191,7 @@ AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, 
 ListDerivs[f_, x_, nMax_] := Map[Derivative[#][f][x]&, Range[0,nMax]];
 
 (* only for up to second order ordinary linear DEQ *)
-Options[ChebyNDSolveRaw] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
+Options[ChebyNDSolveRaw] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
 ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 		{DEQ, BCs, fIndepTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhsBcs, rhs, sol},
 	DEQ = DEQAndBCs[[1]][[1]];
@@ -209,7 +209,7 @@ ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	{sol, grid}
 ];
 
-Options[ChebyNDSolve] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
+Options[ChebyNDSolve] = {"GridPoints" -> 100, "NumberOfDigits"->MachinePrecision};
 ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, grid},
 	{sol,grid} = ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
 		"GridPoints"->OptionValue["GridPoints"],
@@ -226,3 +226,9 @@ GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[
 Scan[SetAttributes[#, {Protected, ReadProtected}]&,
      Select[Symbol /@ Names["NumericalPart`*"], Head[#] === Symbol &]];
 EndPackage[];
+
+
+(*    ToDo and Bugs
+	- Implement boundary conditions that are not at x0 or x1
+	- first order DEQ (right now it's hard-coded for second order)
+*)
