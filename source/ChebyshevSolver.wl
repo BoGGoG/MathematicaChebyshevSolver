@@ -1,3 +1,28 @@
+(*
+Package: ChebyshevSolver
+Author: Marco Knipfer
+Email: mknipfer+chebyshev @ crimson . ua . edu
+Institution: University of Alabama
+Date: 09/2020
+Description: This is a small package I wrote to solve a single ODE with a Chebyshev grid using
+	the pseudospectral method.
+	The main function is `ChebyshevSolver`ChebyNDSolve.
+Usage: {sol, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+	- DEQ: the differential equation
+	- bc1, bc2: boundary conditions. Right now they are only working at x0 or x1, but you can supply a funciton value or a derivative value there
+	- {x,x0,x1}: Want to integrate the variable x from x0 to x1
+	- Option: "GridPoints", number of grid points
+Example:
+	DEQ = x f[x] + 2 f'[x] + f''[x] == 0 ;
+	x0 = 0.;
+	x1 = 2 Pi;
+	bc1 = f[x0] == 0.;
+	bc2 = f'[x0] == 1.;
+	chebPoints = 100;
+	{sol, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+	plotCheb = ListPlot[Thread[{grid, sol}]];
+*)
+
 BeginPackage["ChebyshevSolver`"];
 
 Unprotect["ChebyshevSolver`*"];
@@ -162,12 +187,12 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	nGrid = OptionValue["GridPoints"];
 
 	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
-	funcAndDerivs = ListDerivs[f, x, 2];
+	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 	constantTerm = DEQ /.f->(0&);
 
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv}];
-	{DEQMatrixOperator, rhs} = AddBoundaryCond[DEQMatrixOperator, BCs, {x,x0,x1}, deriv];
+	{DEQMatrixOperator, rhs} = AddBoundaryConditions[DEQMatrixOperator, BCs, {x,x0,x1}, deriv];
 	sol = LinearSolve[DEQMatrixOperator, rhs];
 	{sol, grid}
 ];
