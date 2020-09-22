@@ -5,7 +5,7 @@ Email: mknipfer+chebyshev @ crimson . ua . edu
 Institution: University of Alabama
 Date: 09/2020
 Description: This is a small package I wrote to solve a single ODE with a Chebyshev grid using
-	the pseudospectral method.
+	the pseudospectral method. Only works for second order linear ODEs.
 	The main function is `ChebyshevSolver`ChebyNDSolve.
 Usage: {sol, grid} = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 	- DEQ: the differential equation
@@ -204,6 +204,4 @@ GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[
 
 Scan[SetAttributes[#, {Protected, ReadProtected}]&,
      Select[Symbol /@ Names["NumericalPart`*"], Head[#] === Symbol &]];
-
-(*End[];*)
 EndPackage[];
