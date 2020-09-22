@@ -7,7 +7,8 @@
 
 <<"../source/ChebyshevSolver.wl"
 
-DEQ = + x f[x] - 2 f'[x] + f''[x] == 0 ;
+(* DEQ = - x f[x] - 2 f'[x] + f''[x] == 0 ; *)
+DEQ = f[x] + Exp[-x] f''[x] == 0;
 (* DEQ = f[x] + 2 f'[x] - f''[x] == 0 ; *)
 (* DEQ = Sin[x]^2 f[x] + Exp[-x] f''[x] == 0 (* needs chebPoints = 100 *) *)
 x0 = 0.;
@@ -19,10 +20,13 @@ chebPoints = 100;
 
 sol2[y_] = f[y]/.NDSolve[{DEQ, bc1, bc2}, f, {x, x0, x1}][[1]];
 
+solInterpolated = Interpolation[Thread[{grid,sol}]];
+
 
 (* Plot and Export for Viewing *)
-plotCheb = ListPlot[Thread[{grid, sol}]];
-plotNDSolve = Plot[sol2[x], {x,x0,x1}];
-plot = Show[plotCheb, plotNDSolve];
+plotCheb = ListPlot[Thread[{grid, sol}], PlotLegends->LineLegend@{"ChebyshevSolver"}];
+plotNDSolve = Plot[sol2[x], {x,x0,x1}, PlotStyle->{Red, Dashed}, PlotLegends->LineLegend@{"NDSolve"}];
+plotInterpolate = Plot[solInterpolated[x], {x,x0,x1}, PlotStyle->{Opacity[0.4,Blue]}, PlotLegends->LineLegend@{"ChebyshevSolver interpolated"}];
+plot = Show[plotCheb, plotNDSolve, plotInterpolate];
 Export["../TmpPlots/plot.png", plot]
 (* Export["../TmpPlots/plot.png", DerivMatrix // MatrixForm] *)
