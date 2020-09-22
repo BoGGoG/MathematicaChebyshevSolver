@@ -39,7 +39,7 @@ ClearAll["ChebyshevSolver`*", "ChebyshevSolver`Private`*"];
 StripArgument[expr_, arg_] := expr /. f_[xx___, arg, yy___] -> f[xx, yy];
 
 (* build chebyshev grid *)
-ChebyshevPoints[nz_, OptionsPattern["NumberOfDigits"->MachinePrecision]] := Block[{numberOfDigits},
+ChebyshevPoints[nz_, OptionsPattern["NumberOfDigits"->MachinePrecision]] := Block[{r, numberOfDigits},
 	numberOfDigits = OptionValue["NumberOfDigits"];
 	N[Table[Cos[(r \[Pi])/nz],{r,0,nz}], numberOfDigits]
 ];
@@ -118,12 +118,12 @@ HasDerivQ[expr_] := Not@FreeQ[expr, Derivative];
 		- give a "source" term {0,...,y,0,0,...}
 		- then op == source has f[p]==y as the row where p is
 *)
-ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, p, nGrid},
+ApplyDirichletBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, p, nGrid},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
 	nGrid = Length@DEQOperator;
 	operator = DEQOperator;
 	bcRow = Table[0, nGrid];
-	rhs = Table[0, nGrid];
+	rhs = source;
 
 	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyDirichletBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
 
@@ -141,11 +141,11 @@ ApplyDirichletBC[DEQOperator_, bc_, {x_, x0_, x1_}] := Block[{operator, pos, f, 
 ]
 
 (* f'[p] == y. Only works for one Neumann bc in the system, because it implements it always in row 2 *)
-ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, bcVal, nGrid, operator, rhs},
+ApplyNeumannBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, bcVal, nGrid, operator, rhs},
 	{pos, bcVal} = bc /. f_[p_] == y_ -> {p, y};
 	nGrid = Length@DEQOperator;
 	operator = DEQOperator;
-	rhs = Table[0, nGrid];
+	rhs = source;
 
 	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyNeumannBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
 
@@ -163,31 +163,37 @@ ApplyNeumannBC[DEQOperator_, bc_, {x_, x0_, x1_}, derivMatrix_] := Block[{pos, b
 	{operator, rhs}
 ]
 
-AddBoundaryCondition[DEQOperator_, boundaryCondition_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs},
+AddBoundaryCondition[{DEQOperator_, source_}, boundaryCondition_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs},
 	operator = DEQOperator;
 	If[Not@HasDerivQ[boundaryCondition],
-		{operator, rhs} = ApplyDirichletBC[operator, boundaryCondition, {x,x0,x1}];,
-		{operator, rhs} = ApplyNeumannBC[operator, boundaryCondition, {x,x0,x1}, derivMatrix];];
+		{operator, rhs} = ApplyDirichletBC[{operator, source}, boundaryCondition, {x,x0,x1}];,
+		{operator, rhs} = ApplyNeumannBC[{operator, source}, boundaryCondition, {x,x0,x1}, derivMatrix];];
 	{operator, rhs}
 ];
 
 (* assuming two boundary conditions, we only work with second order DEQs *)
-AddBoundaryConditions[DEQOperator_, boundaryConditions_, {x_, x0_, x1_}, derivMatrix_] := Block[{operator, rhs1, rhs2},
+AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, x1_}, derivMatrix_] := Block[
+		{operator, rhs, rhs1, rhs2, source},
 	operator = DEQOperator;
 
-	{operator, rhs1} = AddBoundaryCondition[operator, boundaryConditions[[1]], {x,x0,x1}, derivMatrix];
-	{operator, rhs2} = AddBoundaryCondition[operator, boundaryConditions[[2]], {x,x0,x1}, derivMatrix];
+	If[Not@FreeQ[fIndepTerm, x],
+		source = - fIndepTerm /. x->grid;,
+		source = - fIndepTerm ConstantArray[1, Length@grid];
+	];
+	rhs = source;
 
-	{operator, rhs1+rhs2}
+	{operator, rhs} = AddBoundaryCondition[{operator, rhs}, boundaryConditions[[1]], {x,x0,x1}, derivMatrix];
+	{operator, rhs} = AddBoundaryCondition[{operator, rhs}, boundaryConditions[[2]], {x,x0,x1}, derivMatrix];
+
+	{operator, rhs}
 ];
 
 ListDerivs[f_, x_, nMax_] := Map[Derivative[#][f][x]&, Range[0,nMax]];
 
-Options[ChebyNDSolveRaw] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
-
 (* only for up to second order ordinary linear DEQ *)
+Options[ChebyNDSolveRaw] = {"GridPoints" -> 25, "NumberOfDigits"->MachinePrecision};
 ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
-		{DEQ, BCs, constantTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhs, sol},
+		{DEQ, BCs, fIndepTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhsBcs, rhs, sol},
 	DEQ = DEQAndBCs[[1]][[1]];
 	BCs = DEQAndBCs[[2;;]];
 	nGrid = OptionValue["GridPoints"];
@@ -195,11 +201,11 @@ ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
 	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
 	coeffs = Coefficient[DEQ, funcAndDerivs];
-	constantTerm = DEQ /.f->(0&);
+	fIndepTerm = DEQ /.f->(0&);
 
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv}];
-	{DEQMatrixOperator, rhs} = AddBoundaryConditions[DEQMatrixOperator, BCs, {x,x0,x1}, deriv];
-	sol = LinearSolve[DEQMatrixOperator, rhs];
+	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv];
+	sol = LinearSolve[DEQMatrixOperator, rhsBcs];
 	{sol, grid}
 ];
 
