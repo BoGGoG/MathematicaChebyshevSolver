@@ -26,9 +26,18 @@ For a working example see the file `Tests/UseChebyshevSolver.wls`
 
 - Import the package: <<"pathToPackage`"
 - Set up differential equation, an intervall `[x0, x1]` in which the DEQ is to be solved and boundary conditions (for second order: `{bc1, bc2}`. Currently the conditions have to be on the boundary of the intervall (at `x0` or `x1`).
+
+Example: Sin
 ```mathematica
-sol = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->100];
-plot = Plot[sol[x], {x,x0,x1}];
+DEQ =  f[x] + f''[x] == 0 ;
+x0 = 0.;
+x1 = 2 Pi;
+bc1 = f[x0] == 0.;
+bc2 = f'[x0] == 1.;
+chebPoints = 50;
+
+sol = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+plot = Plot[sol[x], {x,x0,x1}]
 ```
 
 # Some Plots
