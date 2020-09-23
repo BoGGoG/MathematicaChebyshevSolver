@@ -94,7 +94,6 @@ MatrixPower[m_?SquareMatrixQ, 0] := IdentityMatrix[Length@m];
 Protect[MatrixPower];
 
 BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
-	Print[coeff];
 	If[FreeQ[coeff, x],
 		coeff * MatrixPower[deriv, order],
 		DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]
