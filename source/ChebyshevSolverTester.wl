@@ -11,30 +11,42 @@ PrintSetup[DEQAndBCs__, {x_, x0_, x1_}] := Block[{DEQ, bcs},
 	Print["boundary conditions: ", bcs];
 ];
 
-Options[TestDEQ] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
-TestDEQ[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
-		{DEQ, bcs, y, plotCheb, plotNDSolve, plotInterpolate},
-	PrintSetup[DEQAndBCs, {x, x0, x1}];
+Options[GeneratePlots] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
+GeneratePlots[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
+		{sol, grid, solInterpolated, solNDSolve, plotCheb, plotNDSolve, plotInterpolate},
 
 	{sol, grid} = ChebyshevSolver`ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
 	solInterpolated = ChebyshevSolver`ChebyNDSolve[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
 	solNDSolve[y_] = f[y]/.NDSolve[DEQAndBCs, f, {x, x0, x1}][[1]];
 
 	plotCheb = ListPlot[Thread[{grid, sol}], PlotLegends->LineLegend@{"ChebyNDSolveRaw"}];
-	plotNDSolve = Plot[solNDSolve[x], {x,x0,x1}, PlotStyle->{Red, Dashed}, PlotLegends->LineLegend@{"NDSolve"}];
 	plotInterpolate = Plot[solInterpolated[x], {x,x0,x1},
 		PlotStyle->{Opacity[0.4,Blue]}, PlotLegends->LineLegend@{"ChebyNDSolve (interpolated)"}];
+	plotNDSolve = Plot[solNDSolve[x], {x,x0,x1}, PlotStyle->{Red, Dashed}, PlotLegends->LineLegend@{"NDSolve"}];
+	{plotCheb, plotInterpolate, plotNDSolve}
+];
+
+ShowPlots[{plotCheb_, plotNDSolve_, plotInterpolate_}, DEQAndBCs__, nGrid_, {x_, x0_, x1_}] := Block[
+	{},
 	Show[plotCheb, plotNDSolve, plotInterpolate,
 		PlotLabel->"DEQ: "<>ToString[TraditionalForm@DEQAndBCs[[1]]]<>"\nBCs: "<>ToString[DEQAndBCs[[2;;]]]
-		<>"\nGrid: ["<>ToString@x0<>","<>ToString@x1"]"<>", GridPoints: "<>ToString[OptionValue["GridPoints"]]]
+		<>"\nGrid: ["<>ToString@x0<>","<>ToString@x1"]"<>", GridPoints: "<>ToString[nGrid]]
 ];
 
 
+Options[TestDEQ] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
+TestDEQ[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
+		{DEQ, bcs, y, plotCheb, plotNDSolve, plotInterpolate},
 
+	PrintSetup[DEQAndBCs, {x, x0, x1}];
+	{plotCheb, plotInterpolate, plotNDSolve} = GeneratePlots[DEQAndBCs, f, {x, x0, x1},
+		"GridPoints"->OptionValue["GridPoints"]];
+	ShowPlots[{plotCheb, plotNDSolve, plotInterpolate}, DEQAndBCs, OptionValue["GridPoints"], {x,x0,x1}]
+];
 
-
-
-
+TestDEQs[setups_] := Block[{},
+	Map[Apply[TestDEQ], setups]
+];
 
 Scan[SetAttributes[#, {Protected, ReadProtected}]&,
      Select[Symbol /@ Names["NumericalPart`*"], Head[#] === Symbol &]];
