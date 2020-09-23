@@ -4,7 +4,8 @@
 <<"../source/ChebyshevSolver.wl"
 <<"../source/ChebyshevSolverTester.wl"
 
-(* DEQOrder *)
+(* Test DEQOrder *)
+(* DEQ order prints the order of the ordinary differential equation *)
 
 <<"../source/ChebyshevSolver.wl"
 
@@ -17,10 +18,13 @@ Print[ChebyshevSolver`DEQOrder[DEQ, f, x] == 1];
 DEQ =  x^2 + x^2 f[x]  == 0 ;
 Print[ChebyshevSolver`DEQOrder[DEQ, f, x] == 0];
 
-(* Compare to NDSolve *)
-
 <<"../source/ChebyshevSolver.wl"
 <<"../source/ChebyshevSolverTester.wl"
+
+(* Test
+	- ChebyNDSolveRaw: Returns grid and solution on grid
+	- ChebyNDSolveRaw: Returns interpolated solution (as function)
+*)
 
 setupList = {};
 
