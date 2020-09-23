@@ -32,7 +32,9 @@ plot = Plot[sol[x], {x,x0,x1}];
 ```
 
 # Some Plots
-[plot1](plots/DEQ1.png "DEQ1")
+![plot1](plots/DEQ1.png "DEQ1")
+![plot2](plots/DEQ2.png "DEQ2")
+![plot3](plots/DEQ3.png "DEQ3")
 
 
 # ToDo
