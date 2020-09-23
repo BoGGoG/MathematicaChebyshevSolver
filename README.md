@@ -35,6 +35,7 @@ plot = Plot[sol[x], {x,x0,x1}];
 ![plot1](plots/DEQ1.png "DEQ1")
 ![plot2](plots/DEQ2.png "DEQ2")
 ![plot3](plots/DEQ3.png "DEQ3")
+![plot4](plots/DEQ4.png "DEQ4")
 
 
 # ToDo

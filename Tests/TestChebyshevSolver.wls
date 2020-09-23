@@ -28,6 +28,15 @@ Print[ChebyshevSolver`DEQOrder[DEQ, f, x] == 0];
 
 setupList = {};
 
+DEQ =  f[x] + f''[x] == 0 ;
+x0 = 0.;
+x1 = 2 Pi;
+bc1 = f[x0] == 0.;
+bc2 = f'[x0] == 1.;
+chebPoints = 50;
+setup = {{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints};
+AppendTo[setupList, setup];
+
 DEQ =  Cos[x] x^2 - Sin[x] f[x] + 2 Exp[x] f'[x] == 0 ;
 x0 = -2.;
 x1 = 4 Pi;
