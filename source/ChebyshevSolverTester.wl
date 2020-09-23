@@ -44,8 +44,14 @@ TestDEQ[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
 	ShowPlots[{plotCheb, plotNDSolve, plotInterpolate}, DEQAndBCs, OptionValue["GridPoints"], {x,x0,x1}]
 ];
 
+CreateDirIfNotExists[path_] := Quiet[
+  CreateDirectory[path]
+, CreateDirectory::filex
+];
+
 Options[SavePlots] = {"Folder"->"../TmpPlots"};
 SavePlots[plots_, OptionsPattern[]] := Block[{name, p, path},
+	CreateDirIfNotExists[OptionValue["Folder"]];
 	Print[Length@plots, " plots to export"];
 	Do[
 		name = "DEQ"<>ToString@p<>".png";
