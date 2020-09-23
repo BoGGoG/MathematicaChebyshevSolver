@@ -44,6 +44,17 @@ TestDEQ[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
 	ShowPlots[{plotCheb, plotNDSolve, plotInterpolate}, DEQAndBCs, OptionValue["GridPoints"], {x,x0,x1}]
 ];
 
+Options[SavePlots] = {"Folder"->"../TmpPlots"};
+SavePlots[plots_, OptionsPattern[]] := Block[{name, p, path},
+	Print[Length@plots, " plots to export"];
+	Do[
+		name = "DEQ"<>ToString@p<>".png";
+		path = FileNameJoin[{OptionValue["Folder"], name}];
+		Print["Exporting plot ", path];
+		Export[path, plots[[p]]];
+	, {p, 1, Length@plots}];
+];
+
 TestDEQs[setups_] := Block[{plots},
 	plots = Map[Apply[TestDEQ], setups];
 	SavePlots[plots];
@@ -54,6 +65,5 @@ Scan[SetAttributes[#, {Protected, ReadProtected}]&,
 EndPackage[];
 
 (* ToDo
-	- save plots
 	- check boundary conditions
 *)
