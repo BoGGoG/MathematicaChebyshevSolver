@@ -244,5 +244,4 @@ EndPackage[];
 
 (*    ToDo and Bugs
 	- Implement boundary conditions that are not at x0 or x1
-	- first order DEQ (right now it's hard-coded for second order)
 *)
