@@ -44,10 +44,16 @@ TestDEQ[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
 	ShowPlots[{plotCheb, plotNDSolve, plotInterpolate}, DEQAndBCs, OptionValue["GridPoints"], {x,x0,x1}]
 ];
 
-TestDEQs[setups_] := Block[{},
-	Map[Apply[TestDEQ], setups]
+TestDEQs[setups_] := Block[{plots},
+	plots = Map[Apply[TestDEQ], setups];
+	SavePlots[plots];
 ];
 
 Scan[SetAttributes[#, {Protected, ReadProtected}]&,
      Select[Symbol /@ Names["NumericalPart`*"], Head[#] === Symbol &]];
 EndPackage[];
+
+(* ToDo
+	- save plots
+	- check boundary conditions
+*)

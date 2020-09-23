@@ -26,8 +26,9 @@ DEQ =  Cos[x] x^2 - Sin[x] f[x] + 2 Exp[x] f'[x] == 0 ;
 x0 = -2.;
 x1 = 4 Pi;
 bc1 = f[x0] == 0.;
-chebPoints = 200;
+chebPoints = 50;
 plot = ChebyshevSolverTester`TestDEQ[{DEQ, bc1}, f, {x,x0,x1}, "GridPoints"->chebPoints];
+setup1 = {{DEQ, bc1}, f, {x,x0,x1}, "GridPoints"->chebPoints};
 Export["../TmpPlots/plot.png", plot];
 
 DEQ =  x^2 + x^2 f[x] + 2 f'[x] + f''[x] == 0 ;
@@ -35,6 +36,10 @@ x0 = -1.;
 x1 = 4 Pi;
 bc1 = f[x0] == 0.;
 bc2 = f'[x0] == 1.;
-chebPoints = 200;
+chebPoints = 100;
 plot = ChebyshevSolverTester`TestDEQ[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 Export["../TmpPlots/plot.png", plot];
+setup2 = {{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints};
+
+{plot1, plot2} = TestDEQs[{setup1, setup2}]
+Export["../TmpPlots/plot.png", plot2];
