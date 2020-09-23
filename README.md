@@ -31,6 +31,9 @@ sol = ChebyshevSolver`ChebyNDSolve[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->
 plot = Plot[sol[x], {x,x0,x1}];
 ```
 
+# Some Plots
+[plot1](plots/DEQ1.png "DEQ1")
+
 
 # ToDo
 - Setting of number of digits to keep in whole calculation
