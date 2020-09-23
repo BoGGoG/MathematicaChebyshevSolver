@@ -3,8 +3,8 @@
 This is a package for using the Pseudospectral method and a Chebyshev grid.
 I developed it during my PhD time at the University of Alabama.
 
-Author: Marco Knipfer
-Institution: University of Alabama
+Author: Marco Knipfer   
+Institution: University of Alabama   
 Year: 2020
 
 # Features and Restrictions
