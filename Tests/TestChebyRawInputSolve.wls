@@ -2,7 +2,8 @@
 
 <<"../source/ChebyshevSolver.wl"
 
-DEQ =  Sin[x] + x^2 f[x] + 2 f'[x] + f''[x] + Exp[Cos[x]] f'''[x]  == 0 ;
+(*DEQ =  Sin[x] + x^2 f[x] + 2 f'[x] + f''[x] + Exp[Cos[x]] f'''[x]  == 0 ;*)
+DEQ =  Sin[x] + x^2 f[x] + 2 f'[x] + f''[x]  == 0 ;
 x0 = 0.;
 x1 = 2 Pi;
 bc1 = f[x0] == 0.;
@@ -46,20 +47,16 @@ Length@DEQOnGrid == DEQOrder[DEQ, f, x, "Start"->10]+2
 Length@DEQOnGrid[[1]] == chebPoints + 1
 
 
-
-orderZeroOp = ChebyshevSolver`BuildDEQMatrixOrderNFromGridValues[DEQOnGrid[[2]], {grid, deriv}, 0]
+(* test if DEQ operator matrix is correct
+Here I am calculating the matrix operator in two ways:
+	- using the (well tested) methods from ChebyNDSolve that takes functions
+	- using the "new" BuildDEQMatrixFromGridValues
+*)
 
 DEQMatrixOp = ChebyshevSolver`BuildDEQMatrixFromGridValues[DEQOnGrid, {grid, deriv}]
 
-DEQMatrixOp//MatrixForm
+funcAndDerivs = ChebyshevSolver`ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
+coeffFuncs = Coefficient[DEQ[[1]], funcAndDerivs];
+DEQMatrixOpCompare = BuildDEQMatrixOperator[coeffFuncs, x, {grid,deriv}];
 
-
-plot = ListPlot[Thread@{grid, DEQOnGrid[[2]]}];
-
-
-Export["../TmpPlots/plot.png", plot] (* might have to create this folder before *)
-
-Export["../TmpPlots/plot.png", DEQMatrixOp//MatrixForm] (* might have to create this folder before *)
-
-
-DEQMatrixOp
+DEQMatrixOp == DEQMatrixOpCompare
