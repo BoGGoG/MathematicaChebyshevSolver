@@ -15,7 +15,7 @@ Options[GeneratePlots] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision
 GeneratePlots[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
 		{sol, grid, solInterpolated, solNDSolve, plotCheb, plotNDSolve, plotInterpolate},
 
-	{sol, grid} = ChebyshevSolver`ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
+	{sol, {grid, deriv}} = ChebyshevSolver`ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
 	solInterpolated = ChebyshevSolver`ChebyNDSolve[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
 	solNDSolve[y_] = f[y]/.NDSolve[DEQAndBCs, f, {x, x0, x1}][[1]];
 
