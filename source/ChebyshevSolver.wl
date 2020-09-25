@@ -105,8 +105,10 @@ BuildDEQMatrixOrderNFromGridValues[coeffArr_, {grid_, deriv_}, order_] := Block[
 ];
 
 BuildDEQMatrixFromGridValues[coeffs_, {grid_, deriv_}] := Block[{order, list},
-	order = Length@coeffs;
-	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#]], {grid, deriv}, #-1]&, Range[1, order]];
+	order = Length@coeffs - 2;
+	Print["The order is ", order];
+	Print["the coeffs are ", coeffs];
+	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#+2]], {grid, deriv}, #]&, Range[0, order]];
 	Total[list]
 ];
 
