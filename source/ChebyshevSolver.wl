@@ -259,6 +259,13 @@ GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_] := Block[{coeff},
 	]
 ];
 
+(* only second order *)
+ConvertDEQToGrid[DEQ_, f_, x_, grid_] := Block[{order, coeffs},
+	order = DEQOrder[DEQ, f, x, "Start"->5];
+	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid]&, Range[-1,order]];
+	coeffs
+];
+
 
 (* END OF FUNCTIONS *)
 
