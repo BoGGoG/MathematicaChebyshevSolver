@@ -221,21 +221,6 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
 
-GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, indepCoeff},
-	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
-	coefficients = Coefficient[DEQ[[1]], funcAndDerivs];
-	indepCoeff = GetIndepCoeff[DEQ, f, x];
-	Prepend[coefficients, indepCoeff]
-];
-
-GetNthOrderCoeff[DEQ_, f_, {x_, -1}] := GetIndepCoeff[DEQ,f,x];
-GetNthOrderCoeff[DEQ_, f_, {x_, n_/;n>=0}] := Block[{term},
-	term = 	Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
-	Coefficient[term, Derivative[n][f][x]]
-];
-
-GetIndepCoeff[DEQ_, f_, x_] := DEQ[[1]]/.f->(0&);
-
 CheckOrder[DEQ_, f_, x_, n_/;n>=0] := Block[{term},
 	term = GetNthOrderTerm[DEQ, f, {x, n}];
 
@@ -249,6 +234,25 @@ CheckOrder[DEQ_, f_, x_, n_/;n>=0] := Block[{term},
 Options[DEQOrder] = {"Start"->3};
 DEQOrder[DEQ_, f_, x_, OptionsPattern[]] := Block[{},
 	CheckOrder[DEQ, f, x, 3]
+];
+
+GetIndepCoeff[DEQ_, f_, x_] := DEQ[[1]]/.f->(0&);
+
+GetNthOrderCoeff[DEQ_, f_, {x_, -1}] := GetIndepCoeff[DEQ,f,x];
+GetNthOrderCoeff[DEQ_, f_, {x_, n_/;n>=0}] := Block[{term},
+	term = Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
+	Coefficient[term, Derivative[n][f][x]]
+];
+
+GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, indepCoeff},
+	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
+	coefficients = Coefficient[DEQ[[1]], funcAndDerivs];
+	indepCoeff = GetIndepCoeff[DEQ, f, x];
+	Prepend[coefficients, indepCoeff]
+];
+
+GetCoefficientArrays[DEQ_, f_, x_, grid_] := Block[{},
+	0
 ];
 
 
