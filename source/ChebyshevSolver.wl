@@ -204,19 +204,32 @@ ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv}];
 	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv];
 	sol = LinearSolve[DEQMatrixOperator, rhsBcs];
-	{sol, grid}
+	{sol, {grid, deriv}}
 ];
 
 Options[ChebyNDSolve] = {"GridPoints" -> 100, "NumberOfDigits"->MachinePrecision};
-ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, grid},
-	{sol,grid} = ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
+ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, grid, func, dfunc, dsol, ddsol},
+	{sol, {grid, deriv}} = ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
 		"GridPoints"->OptionValue["GridPoints"],
 		"NumberOfDigits"->OptionValue["NumberOfDigits"]];
-	Interpolation[Thread@{grid, sol}]
+	dsol = deriv.sol;
+	ddsol = deriv.dsol;
+	(* func = Interpolation[Thread@{grid, sol}];
+	dfunc = Interpolation[Thread@{grid, deriv.sol}]; *)
+	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]]}, {i, 1, Length@grid}];
+	(* dfunc = Interpolation[Thread@{grid, deriv.sol}]; *)
+	func
 ];
 
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
+
+GetNthOrderCoeff[DEQ_, f_, {x_, n_}] := Block[{term},
+	term = 	Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
+	Coefficient[term, Derivative[n][f][x]]
+];
+
+GetIndepCoeff[DEQ_, f_, x_] := DEQ[[1]]/.f->(0&);
 
 CheckOrder[DEQ_, f_, x_, n_/;n>=0] := Block[{term},
 	term = GetNthOrderTerm[DEQ, f, {x, n}];
