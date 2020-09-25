@@ -106,8 +106,6 @@ BuildDEQMatrixOrderNFromGridValues[coeffArr_, {grid_, deriv_}, order_] := Block[
 
 BuildDEQMatrixFromGridValues[coeffs_, {grid_, deriv_}] := Block[{order, list},
 	order = Length@coeffs - 2;
-	Print["The order is ", order];
-	Print["the coeffs are ", coeffs];
 	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#+2]], {grid, deriv}, #]&, Range[0, order]];
 	Total[list]
 ];
@@ -182,6 +180,7 @@ AddBoundaryCondition[{DEQOperator_, source_}, boundaryCondition_, {x_, x0_, x1_}
 	{operator, rhs}
 ];
 
+(* need to change input to match with AddBoundaryCondition *)
 AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, x1_}, derivMatrix_] := Block[
 		{operator, rhs, rhs1, rhs2, source},
 	operator = DEQOperator;
@@ -215,6 +214,7 @@ ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 
 	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv}];
 	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv];
+
 	sol = LinearSolve[DEQMatrixOperator, rhsBcs];
 	{sol, {grid, deriv}}
 ];
@@ -230,6 +230,17 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 	func
 ];
 
+ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}] := Block[{operator, source, rhs},
+	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM}];
+	source = coeffArrs[[1]];
+	rhs = - source;
+	{x0, x1} = {grid[[1]], grid[[-1]]};
+
+	Scan[({operator, rhs} = AddBoundaryCondition[{operator, rhs}, #, {x,x0,x1}, derivM])&, bcs];
+
+	sol = LinearSolve[operator, rhs];
+	{sol, {grid, deriv}}
+];
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
 
