@@ -18,6 +18,7 @@ coefficients == {Sin[x], x^2, 2, 1, Exp[Cos[x]]}
 
 (* coefficient arrays *)
 coefficientsArrays = Map[GetCoefficientArray[DEQ, f, {x, #}, grid]&, Range[0,3]];
+
 coeff1ArrCompare = coefficients[[1]]/.x->grid;
 coeff2ArrCompare = coefficients[[2]]/.x->grid;
 coeff3ArrCompare = ConstantArray[coefficients[[3]], Length@grid];
@@ -33,10 +34,18 @@ coeff5ArrCompare == coefficientsArrays[[4]]
 indepCoeffArrCompare = (DEQ[[1]]/.f->(0&))/.x->grid;
 indepCoeffArr = ChebyshevSolver`GetIndepCoeff[DEQ, f, x]/.x->grid;
 indepCoeffArrCompare == indepCoeffArr
+indepCoeffArrCompare == ChebyshevSolver`ConvertDEQToGrid[DEQ, f, x, grid][[1]]
 
-plot = ListPlot[Thread@{grid, arr}];
+(* ConvertDEQToGrid *)
 
-DEQOnGrid = ChebyshevSolver`ConvertDEQToGrid[DEQ, f, x, grid]
+DEQOnGrid = ChebyshevSolver`ConvertDEQToGrid[DEQ, f, x, grid];
+coefficientsArrays == DEQOnGrid[[2;;]]
+
+Length@DEQOnGrid == DEQOrder[DEQ, f, x, "Start"->10]+2
+
+Length@DEQOnGrid[[1]] == chebPoints + 1
+
+
 
 orderZeroOp = ChebyshevSolver`BuildDEQMatrixOrderNFromGridValues[DEQOnGrid[[2]], {grid, deriv}, 0]
 
