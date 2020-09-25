@@ -224,6 +224,13 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
 
+GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, indepCoeff},
+	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
+	coefficients = Coefficient[DEQ[[1]], funcAndDerivs];
+	indepCoeff = GetIndepCoeff[DEQ, f, x];
+	Prepend[coefficients, indepCoeff]
+];
+
 GetNthOrderCoeff[DEQ_, f_, {x_, -1}] := GetIndepCoeff[DEQ,f,x];
 GetNthOrderCoeff[DEQ_, f_, {x_, n_/;n>=0}] := Block[{term},
 	term = 	Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];

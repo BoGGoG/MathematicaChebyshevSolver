@@ -10,4 +10,4 @@ bc2 = f'[x0] == + 1.5;
 chebPoints = 50;
 {sol, {grid, deriv}} = ChebyshevSolver`ChebyNDSolveRaw[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 
-{indepCoeff, fCoeff, dfCoeff, ddfCoeff} = Map[ChebyshevSolver`GetNthOrderCoeff[DEQ, f, {x, #}]&, Range[-1,2]];
+ChebyshevSolver`GetCoefficients[DEQ, f, {x,2}]
