@@ -100,6 +100,16 @@ BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
 	]
 ];
 
+BuildDEQMatrixOrderNFromGridValues[coeffArr_, {grid_, deriv_}, order_] := Block[{},
+	DiagonalMatrix[coeffArr].MatrixPower[deriv, order]
+];
+
+BuildDEQMatrixFromGridValues[coeffs_, {grid_, deriv_}] := Block[{order, list},
+	order = Length@coeffs;
+	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#]], {grid, deriv}, #-1]&, Range[1, order]];
+	Total[list]
+];
+
 (* given cheby derivative matrices and coefficients of the ODE, build operator L
 	such that L f = c f *)
 BuildDEQMatrixOperator[coeffs_, x_, {grid_,deriv_}] := Block[{nGrid, coeffsOnGrid, derivTerms, n},
