@@ -225,7 +225,7 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
 
 GetNthOrderCoeff[DEQ_, f_, {x_, -1}] := GetIndepCoeff[DEQ,f,x];
-GetNthOrderCoeff[DEQ_, f_, {x_, n_/;n>0}] := Block[{term},
+GetNthOrderCoeff[DEQ_, f_, {x_, n_/;n>=0}] := Block[{term},
 	term = 	Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
 	Coefficient[term, Derivative[n][f][x]]
 ];
