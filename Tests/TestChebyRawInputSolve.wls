@@ -13,4 +13,4 @@ chebPoints = 50;
 dfCoeff= ChebyshevSolver`GetNthOrderCoeff[DEQ, f, {x, 1}]
 ddfCoeff= ChebyshevSolver`GetNthOrderCoeff[DEQ, f, {x, 2}]
 fCoeff= ChebyshevSolver`GetNthOrderCoeff[DEQ, f, {x, 0}]
-IndepCoeff= ChebyshevSolver`GetIndepCoeff[DEQ, f, x]
+IndepCoeff= ChebyshevSolver`GetNthOrderCoeff[DEQ, f, {x, -1}]
