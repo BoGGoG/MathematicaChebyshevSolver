@@ -245,14 +245,18 @@ GetNthOrderCoeff[DEQ_, f_, {x_, n_/;n>=0}] := Block[{term},
 ];
 
 GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, indepCoeff},
-	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
+	funcAndDerivs = ListDerivs[f, x, nMax]; (* f[x], f'[x], f''[x] *)
 	coefficients = Coefficient[DEQ[[1]], funcAndDerivs];
 	indepCoeff = GetIndepCoeff[DEQ, f, x];
 	Prepend[coefficients, indepCoeff]
 ];
 
-GetCoefficientArrays[DEQ_, f_, x_, grid_] := Block[{},
-	0
+GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_] := Block[{coeff},
+	coeff = GetNthOrderCoeff[DEQ, f, {x, order}];
+	If[FreeQ[coeff, x],
+		ConstantArray[coeff, Length@grid],
+		coeff/.x->grid
+	]
 ];
 
 

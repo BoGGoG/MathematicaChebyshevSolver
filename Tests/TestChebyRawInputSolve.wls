@@ -11,3 +11,8 @@ chebPoints = 50;
 {sol, {grid, deriv}} = ChebyshevSolver`ChebyNDSolveRaw[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints];
 
 ChebyshevSolver`GetCoefficients[DEQ, f, {x,2}]
+
+arr = GetCoefficientArray[DEQ, f, {x, 2}, grid];
+plot = ListPlot[Thread@{grid, arr}];
+
+Export["../TmpPlots/plot.png", plot] (* might have to create this folder before *)
