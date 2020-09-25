@@ -214,10 +214,7 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 		"NumberOfDigits"->OptionValue["NumberOfDigits"]];
 	dsol = deriv.sol;
 	ddsol = deriv.dsol;
-	(* func = Interpolation[Thread@{grid, sol}];
-	dfunc = Interpolation[Thread@{grid, deriv.sol}]; *)
 	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]]}, {i, 1, Length@grid}];
-	(* dfunc = Interpolation[Thread@{grid, deriv.sol}]; *)
 	func
 ];
 
