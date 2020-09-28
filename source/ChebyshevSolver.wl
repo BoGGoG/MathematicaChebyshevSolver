@@ -103,16 +103,13 @@ BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_, OptionsPattern[]] := B
 	]
 ];
 
-Options[BuildDEQMatrixOrderNFromGridValues] = {"LimitPointIndex" ->0};
 BuildDEQMatrixOrderNFromGridValues[coeffArr_, {grid_, deriv_}, order_, OptionsPattern[]] := Block[{},
 	DiagonalMatrix[coeffArr].MatrixPower[deriv, order]
 ];
 
-Options[BuildDEQMatrixFromGridValues] = {"LimitPointIndex"->0};
 BuildDEQMatrixFromGridValues[coeffs_, {grid_, deriv_}, OptionsPattern[]] := Block[{order, list},
 	order = Length@coeffs - 2;
-	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#+2]], {grid, deriv}, #,
-		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[0, order]];
+	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#+2]], {grid, deriv}, #]&, Range[0, order]];
 	Total[list]
 ];
 
@@ -243,10 +240,8 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 	func
 ];
 
-Options[ChebyRawInputSolve] = {"LimitPointIndex"->0};
-ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}, OptionsPattern[]] := Block[{operator, source, rhs},
-	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM},
-		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
+ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}] := Block[{operator, source, rhs},
+	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM}];
 	source = coeffArrs[[1]];
 	rhs = - source;
 	{x0, x1} = {grid[[1]], grid[[-1]]};
