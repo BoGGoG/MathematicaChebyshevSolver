@@ -96,7 +96,8 @@ Protect[MatrixPower];
 BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
 	If[FreeQ[coeff, x],
 		coeff * MatrixPower[deriv, order],
-		DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]
+		(*DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]*)
+		DiagonalMatrix[EvaluateOnGrid[coeff, x, grid, "LimitPointIndex"->1]].MatrixPower[deriv, order]
 	]
 ];
 
@@ -274,19 +275,35 @@ GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, in
 	Prepend[coefficients, indepCoeff]
 ];
 
-GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_] := Block[{coeff},
+SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
+	specialPoint = Limit[coeff, x->grid[[1]]];
+	Prepend[coeff/.x->grid[[2;;]], specialPoint ]
+];
+
+Options[EvaluateOnGrid]={"LimitPointIndex" -> 0};
+EvaluateOnGrid[coeff_, x_, grid_, OptionsPattern[]] := Block[{},
+	Switch[OptionValue["LimitPointIndex"],
+		0, Map[(coeff/.x->#)&, grid],
+		1, SpecialEvaluateOnGrid[coeff, x, grid, 1],
+		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
+];
+
+Options[GetCoefficientArray]={"LimitPointIndex" -> 0};
+GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{coeff},
 	coeff = GetNthOrderCoeff[DEQ, f, {x, order}];
 	If[FreeQ[coeff, x],
 		ConstantArray[coeff, Length@grid],
-		coeff/.x->grid
+		EvaluateOnGrid[coeff, x, grid, "LimitPointIndex"->OptionValue["LimitPointIndex"]]
+		(*coeff/.x->grid*)
 	]
 ];
 
 (* Return all the coefficents of the DEQ on the grid *)
 (* s + a f + b f' + c f'' -> {sArr, aArr, bArr, cArr} *)
-ConvertDEQToGrid[DEQ_, f_, x_, grid_] := Block[{order, coeffs},
+Options[ConvertDEQToGrid]={"LimitPointIndex" -> 0};
+ConvertDEQToGrid[DEQ_, f_, x_, grid_, OptionsPattern[]] := Block[{order, coeffs},
 	order = DEQOrder[DEQ, f, x, "Start"->5];
-	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid]&, Range[-1,order]];
+	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid, "LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
 	coeffs
 ];
 
