@@ -93,29 +93,36 @@ Unprotect[MatrixPower];
 MatrixPower[m_?SquareMatrixQ, 0] := IdentityMatrix[Length@m];
 Protect[MatrixPower];
 
-BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_] := Block[{},
+Options[BuildDEQMatrixOrderN] = {"LimitPointIndex"->0};
+BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_, OptionsPattern[]] := Block[{},
 	If[FreeQ[coeff, x],
 		coeff * MatrixPower[deriv, order],
 		(*DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]*)
-		DiagonalMatrix[EvaluateOnGrid[coeff, x, grid, "LimitPointIndex"->1]].MatrixPower[deriv, order]
+		DiagonalMatrix[EvaluateOnGrid[coeff, x, grid,
+			"LimitPointIndex"->OptionValue["LimitPointIndex"]]].MatrixPower[deriv, order]
 	]
 ];
 
-BuildDEQMatrixOrderNFromGridValues[coeffArr_, {grid_, deriv_}, order_] := Block[{},
+Options[BuildDEQMatrixOrderNFromGridValues] = {"LimitPointIndex" ->0};
+BuildDEQMatrixOrderNFromGridValues[coeffArr_, {grid_, deriv_}, order_, OptionsPattern[]] := Block[{},
 	DiagonalMatrix[coeffArr].MatrixPower[deriv, order]
 ];
 
-BuildDEQMatrixFromGridValues[coeffs_, {grid_, deriv_}] := Block[{order, list},
+Options[BuildDEQMatrixFromGridValues] = {"LimitPointIndex"->0};
+BuildDEQMatrixFromGridValues[coeffs_, {grid_, deriv_}, OptionsPattern[]] := Block[{order, list},
 	order = Length@coeffs - 2;
-	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#+2]], {grid, deriv}, #]&, Range[0, order]];
+	list = Map[BuildDEQMatrixOrderNFromGridValues[coeffs[[#+2]], {grid, deriv}, #,
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[0, order]];
 	Total[list]
 ];
 
 (* given cheby derivative matrices and coefficients of the ODE, build operator L
 	such that L f = c f *)
-BuildDEQMatrixOperator[coeffs_, x_, {grid_,deriv_}] := Block[{nGrid, coeffsOnGrid, derivTerms, n},
+Options[BuildDEQMatrixOperator] = {"LimitPointIndex"->0};
+BuildDEQMatrixOperator[coeffs_, x_, {grid_,deriv_}, OptionsPattern[]] := Block[{nGrid, coeffsOnGrid, derivTerms, n},
 	nGrid = Length@grid;
-	DEQMatrixOperator = Sum[BuildDEQMatrixOrderN[coeffs[[n+1]], x, {grid, deriv}, n], {n,0,Length@coeffs-1}];
+	DEQMatrixOperator = Sum[BuildDEQMatrixOrderN[coeffs[[n+1]], x, {grid, deriv}, n,
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]], {n,0,Length@coeffs-1}];
 	DEQMatrixOperator
 ];
 
@@ -182,13 +189,15 @@ AddBoundaryCondition[{DEQOperator_, source_}, boundaryCondition_, {x_, x0_, x1_}
 ];
 
 (* need to change input to match with AddBoundaryCondition *)
-AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, x1_}, derivMatrix_] := Block[
+Options[AddBoundaryConditions] = {"LimitPointIndex"->0};
+AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, x1_}, derivMatrix_, OptionsPattern[]] := Block[
 		{operator, rhs, rhs1, rhs2, source},
 	operator = DEQOperator;
 
 	If[Not@FreeQ[fIndepTerm, x],
-		source = - fIndepTerm /. x->grid;,
-		source = - fIndepTerm ConstantArray[1, Length@grid];
+		(*source = - fIndepTerm /. x->grid;,*)
+		source = - EvaluateOnGrid[fIndepTerm, x, grid, "LimitPointIndex"->OptionValue["LimitPointIndex"]];,
+		source = - ConstantArray[fIndepTerm , Length@grid];
 	];
 	rhs = source;
 
@@ -201,7 +210,7 @@ AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, 
 ListDerivs[f_, x_, nMax_] := Map[Derivative[#][f][x]&, Range[0,nMax]];
 
 (* only for up to second order ordinary linear DEQ *)
-Options[ChebyNDSolveRaw] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
+Options[ChebyNDSolveRaw] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
 ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 		{DEQ, BCs, fIndepTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhsBcs, rhs, sol},
 	DEQ = DEQAndBCs[[1]][[1]];
@@ -213,26 +222,31 @@ ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
 	coeffs = Coefficient[DEQ, funcAndDerivs];
 	fIndepTerm = DEQ /.f->(0&);
 
-	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv}];
-	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv];
+	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv},
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
+	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv,
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
 
 	sol = LinearSolve[DEQMatrixOperator, rhsBcs];
 	{sol, {grid, deriv}}
 ];
 
-Options[ChebyNDSolve] = {"GridPoints" -> 100, "NumberOfDigits"->MachinePrecision};
+Options[ChebyNDSolve] = {"GridPoints" -> 100, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
 ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, grid, func, dfunc, dsol, ddsol},
 	{sol, {grid, deriv}} = ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
 		"GridPoints"->OptionValue["GridPoints"],
-		"NumberOfDigits"->OptionValue["NumberOfDigits"]];
+		"NumberOfDigits"->OptionValue["NumberOfDigits"],
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
 	dsol = deriv.sol;
 	ddsol = deriv.dsol;
 	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]]}, {i, 1, Length@grid}];
 	func
 ];
 
-ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}] := Block[{operator, source, rhs},
-	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM}];
+Options[ChebyRawInputSolve] = {"LimitPointIndex"->0};
+ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}, OptionsPattern[]] := Block[{operator, source, rhs},
+	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM},
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
 	source = coeffArrs[[1]];
 	rhs = - source;
 	{x0, x1} = {grid[[1]], grid[[-1]]};
@@ -276,7 +290,8 @@ GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, in
 ];
 
 SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
-	specialPoint = Limit[coeff, x->grid[[1]]];
+	(*specialPoint = Limit[coeff, x->grid[[1]]];*)
+	specialPoint = coeff /. x -> $MachineEpsilon;
 	Prepend[coeff/.x->grid[[2;;]], specialPoint ]
 ];
 
