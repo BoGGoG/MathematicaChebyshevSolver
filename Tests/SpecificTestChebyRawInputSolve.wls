@@ -14,7 +14,7 @@ DEQOnGrid = ChebyshevSolver`ConvertDEQToGrid[DEQ, f, x, grid, "LimitPointIndex"-
 {sol0, {grid, deriv}} = ChebyshevSolver`ChebyNDSolveRaw[{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints,
 	"LimitPointIndex"->1];
 
-{sol, {grid, deriv}} = ChebyshevSolver`ChebyRawInputSolve[{DEQOnGrid, {bc1, bc2}}, {grid, deriv}, "LimitPointIndex"->1];
+{sol, {grid, deriv}} = ChebyshevSolver`ChebyRawInputSolve[{DEQOnGrid, {bc1, bc2}}, {grid, deriv}];
 
 plot0 = ListPlot[Thread@{grid, sol0}, PlotMarkers->"OpenMarkers", PlotStyle->Blue];
 plot = ListPlot[Thread@{grid, sol}, PlotStyle->Red];
