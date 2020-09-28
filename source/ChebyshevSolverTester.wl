@@ -11,12 +11,16 @@ PrintSetup[DEQAndBCs__, {x_, x0_, x1_}] := Block[{DEQ, bcs},
 	Print["boundary conditions: ", bcs];
 ];
 
-Options[GeneratePlots] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
+Options[GeneratePlots] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
 GeneratePlots[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
 		{sol, grid, solInterpolated, solNDSolve, plotCheb, plotNDSolve, plotInterpolate},
 
-	{sol, {grid, deriv}} = ChebyshevSolver`ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
-	solInterpolated = ChebyshevSolver`ChebyNDSolve[DEQAndBCs, f, {x,x0,x1}, "GridPoints"->OptionValue["GridPoints"]];
+	{sol, {grid, deriv}} = ChebyshevSolver`ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
+		"GridPoints"->OptionValue["GridPoints"],
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
+	solInterpolated = ChebyshevSolver`ChebyNDSolve[DEQAndBCs, f, {x,x0,x1},
+		"GridPoints"->OptionValue["GridPoints"],
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
 	solNDSolve[y_] = f[y]/.NDSolve[DEQAndBCs, f, {x, x0, x1}][[1]];
 
 	plotCheb = ListPlot[Thread[{grid, sol}], PlotLegends->LineLegend@{"ChebyNDSolveRaw"}];
@@ -34,13 +38,14 @@ ShowPlots[{plotCheb_, plotNDSolve_, plotInterpolate_}, DEQAndBCs__, nGrid_, {x_,
 ];
 
 
-Options[TestDEQ] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision};
+Options[TestDEQ] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
 TestDEQ[DEQAndBCs__, f_, {x_, x0_, x1_}, OptionsPattern[]] := Block[
 		{DEQ, bcs, y, plotCheb, plotNDSolve, plotInterpolate},
 
 	PrintSetup[DEQAndBCs, {x, x0, x1}];
 	{plotCheb, plotInterpolate, plotNDSolve} = GeneratePlots[DEQAndBCs, f, {x, x0, x1},
-		"GridPoints"->OptionValue["GridPoints"]];
+		"GridPoints"->OptionValue["GridPoints"],
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
 	ShowPlots[{plotCheb, plotNDSolve, plotInterpolate}, DEQAndBCs, OptionValue["GridPoints"], {x,x0,x1}]
 ];
 
