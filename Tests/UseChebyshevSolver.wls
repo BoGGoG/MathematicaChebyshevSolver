@@ -3,7 +3,8 @@
 
 <<"../source/ChebyshevSolver.wl"
 
-DEQ =  x^2 + x^2 f[x] + 2 f'[x] + f''[x] == 0 ;
+DEQ =  Sin[x] + x^2 f[x] + 2 f'[x] + f''[x]  == 0 ;
+(* DEQ =  x^2 + x^2 f[x] + 2 f'[x] + f''[x] == 0 ; *)
 (* DEQ = f[x] + Exp[-x] f''[x] == 0; *)
 (* DEQ = f[x] + 2 f'[x] - f''[x] == 0 ; *)
 (* DEQ = Sin[x]^2 f[x] + Exp[-x] f''[x] == 0 (* needs chebPoints = 100 *) *)

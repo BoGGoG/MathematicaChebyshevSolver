@@ -19,19 +19,3 @@ DEQOnGrid = ChebyshevSolver`ConvertDEQToGrid[DEQ, f, x, grid, "LimitPointIndex"-
 plot0 = ListPlot[Thread@{grid, sol0}, PlotMarkers->"OpenMarkers", PlotStyle->Blue];
 plot = ListPlot[Thread@{grid, sol}, PlotStyle->Red];
 Export["../TmpPlots/plot2.png", Show[plot0, plot]] (* might have to create this folder before *)
-
-sol0
-
-ClearAll[func]
-
-
-func[f_, {x0_, x1_}] := Block[{fnew,y, x},
-	fnew[y_] := Switch[y,
-		x0, Limit[f[x], x->x0],
-		_, f[y]];
-	 Map[fnew, {x0, x1}]
-]
-
-f := (# Log[#])&;
-
-func[f, {0,1}]
