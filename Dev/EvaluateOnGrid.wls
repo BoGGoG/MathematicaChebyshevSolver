@@ -56,7 +56,7 @@ chebPoints = 5;
 coeff = x Log[x] + Cos[x] + Bs[x] + Ss[x];
 BsArr = x Exp[-x] /. x->grid;
 SsArr = Cos[x] /. x->grid;
-gridVals = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, SsArr}}]
+gridVals = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, SsArr}}, "LimitPointIndex"->1]
 
 SpecialEvaluateOnGrid[coeff, {x, grid}, 1, {{Bs, BsArr}, {Ss, SsArr}}]
 

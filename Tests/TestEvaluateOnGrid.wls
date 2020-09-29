@@ -58,5 +58,6 @@ coeff = Cos[x] + x Log[x] + Bs[x];
 gridVals = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}}, "LimitPointIndex"->1];
 gridValsIndet = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}}]
 specialPoint = coeff /. Bs[x]->BsArr[[1]] /. x Log[x] -> 0 /. x->grid[[1]]
+
 Print[gridVals[[2;;]] == gridValsIndet[[2;;]]];
 Print[gridVals[[1]] == specialPoint];
