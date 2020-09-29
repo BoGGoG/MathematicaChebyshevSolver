@@ -34,3 +34,21 @@ gridVals = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, S
 gridValsCompare = coeffFunc /. x->grid
 
 gridVals == gridValsCompare
+
+
+(* Test 3 *)
+
+
+SsFunc[x_] := Cos[x];
+BsFunc[x_] := x Exp[-x];
+AsFunc[x_] := Exp[x];
+SsArr = Cos[x] /. x->grid;
+BsArr = x Exp[-x] /. x->grid;
+AsArr = Exp[x] /. x->grid;
+coeff = x Sin[x] + Ss[x] Bs[x] +  x As[x];
+coeffFunc = x Sin[x] + SsFunc[x] BsFunc[x] + x AsFunc[x];
+
+gridVals = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, SsArr}, {As, AsArr}}]
+gridValsCompare = coeffFunc /. x->grid
+
+gridVals == gridValsCompare
