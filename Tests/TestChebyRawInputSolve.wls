@@ -55,7 +55,7 @@ Here I am calculating the matrix operator in two ways:
 
 DEQMatrixOp = ChebyshevSolver`BuildDEQMatrixFromGridValues[DEQOnGrid, {grid, deriv}]
 
-funcAndDerivs = ChebyshevSolver`ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
+funcAndDerivs = ChebyshevSolver`ListDerivs[f, x, 3]; (* f[x], f'[x], f''[x] *)
 coeffFuncs = Coefficient[DEQ[[1]], funcAndDerivs];
 DEQMatrixOpCompare = BuildDEQMatrixOperator[coeffFuncs, x, {grid,deriv}];
 

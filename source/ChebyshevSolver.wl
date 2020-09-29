@@ -36,9 +36,63 @@ ClearAll["ChebyshevSolver`*", "ChebyshevSolver`Private`*"];
 
 (* Begin["`Private`"]; *)
 
+(* MAIN FUNCTIONS *)
+
+(* only for up to second order ordinary linear DEQ *)
+Options[ChebyNDSolve] = {"GridPoints" -> 100, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
+ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, grid, func, dfunc, dsol, ddsol},
+	{sol, {grid, deriv}} = ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
+		"GridPoints"->OptionValue["GridPoints"],
+		"NumberOfDigits"->OptionValue["NumberOfDigits"],
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
+	dsol = deriv.sol;
+	ddsol = deriv.dsol;
+	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]], ddsol[[i]]}, {i, 1, Length@grid}];
+	func
+];
+
+Options[ChebyNDSolveRaw] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
+ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
+		{DEQ, BCs, fIndepTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhsBcs, rhs, sol},
+	DEQ = DEQAndBCs[[1]][[1]];
+	BCs = DEQAndBCs[[2;;]];
+	nGrid = OptionValue["GridPoints"];
+
+	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
+	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
+	coeffs = Coefficient[DEQ, funcAndDerivs];
+	fIndepTerm = DEQ /.f->(0&);
+
+	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv},
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
+	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv,
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
+
+	sol = LinearSolve[DEQMatrixOperator, rhsBcs];
+	{sol, {grid, deriv}}
+];
+
+(* take raw input in form of arrays: the values of the coefficients of the deq on grid *)
+ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}] := Block[{operator, source, rhs},
+	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM}];
+	source = coeffArrs[[1]];
+	rhs = - source;
+	{x0, x1} = {grid[[1]], grid[[-1]]};
+
+	Scan[({operator, rhs} = AddBoundaryCondition[{operator, rhs}, #, {x,x0,x1}, derivM])&, bcs];
+
+	sol = LinearSolve[operator, rhs];
+	{sol, {grid, deriv}}
+];
+
+(* HELPER FUNCTIONS *)
+
 StripArgument[expr_, arg_] := expr /. f_[xx___, arg, yy___] -> f[xx, yy];
 
-(* build chebyshev grid *)
+
+
+(* BUILD CHEBYSHEV GRID *)
+
 ChebyshevPoints[nz_, OptionsPattern["NumberOfDigits"->MachinePrecision]] := Block[{r, numberOfDigits},
 	numberOfDigits = OptionValue["NumberOfDigits"];
 	N[Table[Cos[(r \[Pi])/nz],{r,0,nz}], numberOfDigits]
@@ -55,7 +109,9 @@ ChebDerivMatrixOffDiag[nz_, chebyshevPoints_] := Table[
 	If[i!=j,(-1)^(i+j)/(chebyshevPoints[[i]]-chebyshevPoints[[j]]) If[i==1||i==nz+1,2,1]/If[j==1||j==nz+1,2,1],0],
 	{i,nz+1},{j,nz+1}];
 
-ChebyshevPointsIfNotGiven[nz_,chebPointsGiven_, numberOfDigits_:MachinePrecision] :=  If[TrueQ[chebPointsGiven], ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits], chebPointsGiven];
+ChebyshevPointsIfNotGiven[nz_,chebPointsGiven_, numberOfDigits_:MachinePrecision] := If[TrueQ[chebPointsGiven],
+	ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits],
+	chebPointsGiven];
 
 (* build derivative matrix for chebyshev grid *)
 ChebDerivMatrix[nz_, OptionsPattern[{"ChebyshevPoints"->True,"NumberOfDigits"->MachinePrecision}]] := Block[
@@ -80,10 +136,13 @@ TransformDCheb[DCheb_, {a_, b_}] := DCheb*2/(a-b);
 ChebyshevSetup[nz_, OptionsPattern[{"NumberOfDigits"->MachinePrecision, "Intervall"->{1,-1}}]]:=Block[
 		{numberOfDigits, a,b, chebyshevPoints, DCheb},
 	numberOfDigits = OptionValue["NumberOfDigits"];
-	{a,b} = OptionValue["Intervall"];chebyshevPoints = ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits];DCheb =  ChebDerivMatrix[nz,"ChebyshevPoints"-> chebyshevPoints];
+	{a,b} = OptionValue["Intervall"];
+	chebyshevPoints = ChebyshevPoints[nz, "NumberOfDigits"->numberOfDigits];
+	DCheb =  ChebDerivMatrix[nz,"ChebyshevPoints"-> chebyshevPoints];
 	If[{a,b}!={1,-1},
-	chebyshevPoints = TransformChebIntervall[chebyshevPoints, {a,b}];
-	DCheb = TransformDCheb[DCheb, {a,b}]];
+		chebyshevPoints = TransformChebIntervall[chebyshevPoints, {a,b}];
+		DCheb = TransformDCheb[DCheb, {a,b}]
+	];
 
 	{chebyshevPoints, DCheb}
 ];
@@ -139,7 +198,8 @@ ApplyDirichletBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}] := Block[{operato
 	bcRow = Table[0, nGrid];
 	rhs = source;
 
-	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyDirichletBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
+	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyDirichletBC, BC "<>ToString[bc]<>
+		" is not at x0 or x1, this is not implemented yet!"]];
 
 	If[pos == x0,
 		rhs[[1]] = bcVal;
@@ -161,7 +221,8 @@ ApplyNeumannBC[{DEQOperator_, source_}, bc_, {x_, x0_, x1_}, derivMatrix_] := Bl
 	operator = DEQOperator;
 	rhs = source;
 
-	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyNeumannBC, BC "<>ToString[bc]<>" is not at x0 or x1, this is not implemented yet!"]];
+	If[Not@MemberQ[{x0,x1}, pos], Print["ERROR in ApplyNeumannBC, BC "<>ToString[bc]<>
+		" is not at x0 or x1, this is not implemented yet!"]];
 
 	If[pos == x0,
 		rhs[[2]] = bcVal;
@@ -206,52 +267,6 @@ AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, 
 
 ListDerivs[f_, x_, nMax_] := Map[Derivative[#][f][x]&, Range[0,nMax]];
 
-(* only for up to second order ordinary linear DEQ *)
-Options[ChebyNDSolveRaw] = {"GridPoints" -> 50, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
-ChebyNDSolveRaw[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[
-		{DEQ, BCs, fIndepTerm, nGrid, funcAndDerivs, coeffs, DEQMatrixOperator, rhsBcs, rhs, sol},
-	DEQ = DEQAndBCs[[1]][[1]];
-	BCs = DEQAndBCs[[2;;]];
-	nGrid = OptionValue["GridPoints"];
-
-	{grid, deriv} = ChebyshevSetup[nGrid, "Intervall"->{x0,x1}, "NumberOfDigits"->OptionValue["NumberOfDigits"]];
-	funcAndDerivs = ListDerivs[f, x, 2]; (* f[x], f'[x], f''[x] *)
-	coeffs = Coefficient[DEQ, funcAndDerivs];
-	fIndepTerm = DEQ /.f->(0&);
-
-	DEQMatrixOperator = BuildDEQMatrixOperator[coeffs, x, {grid,deriv},
-		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
-	{DEQMatrixOperator, rhsBcs} = AddBoundaryConditions[DEQMatrixOperator, BCs, fIndepTerm, {x,x0,x1}, deriv,
-		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
-
-	sol = LinearSolve[DEQMatrixOperator, rhsBcs];
-	{sol, {grid, deriv}}
-];
-
-Options[ChebyNDSolve] = {"GridPoints" -> 100, "NumberOfDigits"->MachinePrecision, "LimitPointIndex"->0};
-ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, grid, func, dfunc, dsol, ddsol},
-	{sol, {grid, deriv}} = ChebyNDSolveRaw[DEQAndBCs, f, {x,x0,x1},
-		"GridPoints"->OptionValue["GridPoints"],
-		"NumberOfDigits"->OptionValue["NumberOfDigits"],
-		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
-	dsol = deriv.sol;
-	ddsol = deriv.dsol;
-	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]], ddsol[[i]]}, {i, 1, Length@grid}];
-	func
-];
-
-ChebyRawInputSolve[{coeffArrs_?ListQ, bcs__}, {grid_, derivM_}] := Block[{operator, source, rhs},
-	operator = BuildDEQMatrixFromGridValues[coeffArrs, {grid, derivM}];
-	source = coeffArrs[[1]];
-	rhs = - source;
-	{x0, x1} = {grid[[1]], grid[[-1]]};
-
-	Scan[({operator, rhs} = AddBoundaryCondition[{operator, rhs}, #, {x,x0,x1}, derivM])&, bcs];
-
-	sol = LinearSolve[operator, rhs];
-	{sol, {grid, deriv}}
-];
-
 GetNthOrderTerm[DEQ_, f_, {x_, n_}] := Select[DEQ[[1]], Not[FreeQ[#, Derivative[n][f][x]]] &];
 
 CheckOrder[DEQ_, f_, x_, n_/;n>=0] := Block[{term},
@@ -284,6 +299,16 @@ GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, in
 	Prepend[coefficients, indepCoeff]
 ];
 
+(* 	Sometimes at a point that is regular Mathematica has problems:
+	e.g. for x Log[x] Mathematica cannot calculate x Log[x] /. x->0,
+	but it is actually finite (and zero in this example)
+	Limit takes too long.
+	Assuming the Logs are all multiplied by something that goes to zero faster,
+	we chose to go for SeriesCoefficient and take the zeroth coefficient.
+	Note that there are terms like something/x or something/x^2 that we are throwing away.
+	I think they are spurious anyway (mostly?)!
+	I cannot see much difference to the method with x0+$MachineEpsilon
+*)
 SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y},
 	(* specialPoint = Limit[coeff, x->x0; *)
 	(* specialPoint = coeff /. x -> x0+$MachineEpsilon; *)
@@ -291,6 +316,8 @@ SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y},
 	SeriesCoefficient[coeffWithoutLog, {x, x0, 0}]
 ];
 
+(* treat the first point on the grid special.
+	ToDo: Implement for any point *)
 SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
 	specialPoint = SpecialEvaluate[coeff, {x, grid[[1]]}];
 	Prepend[coeff/.x->grid[[2;;]], specialPoint ]
@@ -356,10 +383,10 @@ GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{c
 Options[ConvertDEQToGrid]={"LimitPointIndex" -> 0};
 ConvertDEQToGrid[DEQ_, f_, x_, grid_, OptionsPattern[]] := Block[{order, coeffs},
 	order = DEQOrder[DEQ, f, x, "Start"->5];
-	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid, "LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
+	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid,
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
 	coeffs
 ];
-
 
 (* END OF FUNCTIONS *)
 
