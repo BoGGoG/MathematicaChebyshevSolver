@@ -21,6 +21,18 @@ Print[ChebyshevSolver`DEQOrder[DEQ, f, x] == 0];
 <<"../source/ChebyshevSolver.wl"
 <<"../source/ChebyshevSolverTester.wl"
 
+(* Test GetCoefficientArray *)
+DEQ = s[x] + a[x] f[x] + b[x] f'[x] + c[x] f''[x] == 0;
+x0 = 0.;
+x1 = 2 Pi;
+chebPoints = 5;
+{grid, deriv} = ChebyshevSolver`ChebyshevSetup[chebPoints, "Intervall"->{x0,x1}];
+Print[ ChebyshevSolver`GetCoefficientArray[DEQ, f, {x, -1}, grid] == Map[s, grid] ];
+Print[ ChebyshevSolver`GetCoefficientArray[DEQ, f, {x, 0}, grid] == Map[a, grid] ];
+Print[ ChebyshevSolver`GetCoefficientArray[DEQ, f, {x, 1}, grid] == Map[b, grid]] ;
+Print[ ChebyshevSolver`GetCoefficientArray[DEQ, f, {x, 2}, grid] == Map[c, grid]] ;
+
+
 (* Test
 	- ChebyNDSolveRaw: Returns grid and solution on grid
 	- ChebyNDSolveRaw: Returns interpolated solution (as function)
