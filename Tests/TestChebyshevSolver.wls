@@ -63,7 +63,7 @@ chebPoints = 100;
 setup = {{DEQ, bc1, bc2}, f, {x,x0,x1}, "GridPoints"->chebPoints};
 AppendTo[setupList, setup];
 
-DEQ = f[x] + Sin[x] f''[x] == 0 ;
+DEQ = f[x] + Exp[x] f''[x] == 0 ;
 x0 = -1.;
 x1 = 2 Pi;
 bc1 = f[x0] == 0.;
