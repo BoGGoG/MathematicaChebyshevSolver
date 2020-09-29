@@ -304,6 +304,36 @@ EvaluateOnGrid[coeff_, {x_, grid_}, OptionsPattern[]] := Block[{},
 		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
 ];
 
+(* ReplaceOnGridFunction[a[x] + b[x], x, b] -> a[x] + b *)
+RemoveArg[func_, x_, removeArgFunc_] := Block[{},
+	func /. removeArgFunc[x] -> removeArgFunc
+];
+
+RemoveArg[func_, x_, removeArgFuncList_?ListQ] := Block[{funcMutable},
+	funcMutable = func;
+	Scan[(funcMutable = RemoveArg[funcMutable, x, #])&, removeArgFuncList];
+	funcMutable
+];
+
+EvaluateFuncsOnGridAndPlugInArrays[func_, {x_, grid_}, OnGridFuncsAndValues__] := Block[{onGridFuncs, onGridValues},
+	onGridFuncs = Transpose[OnGridFuncsAndValues][[1]];
+	onGridValues = Transpose[OnGridFuncsAndValues][[2]];
+	newFunc = RemoveArg[coeff, x, onGridFuncs];
+	Table[newFunc /. {x -> grid[[i]], onGridFuncs[[1]]->onGridValues[[1, i]], onGridFuncs[[2]]->onGridValues[[2, i]]},
+		{i, 1, Length@grid}]
+];
+
+(* some parts of coeff are given as functions, others as values on the grid *)
+EvaluateOnGrid[coeff_, {x_, grid_}, OnGridValues__, OptionsPattern[]] := Block[{},
+	Print["EvaluateOnGrid called with OnGridValues:"];
+	Print[ToString@OnGridValues];
+	Switch[OptionValue["LimitPointIndex"],
+		0, EvaluateFuncsOnGridAndPlugInArrays[coeff, {x, grid}, OnGridValues],
+		1, SpecialEvaluateOnGrid[coeff, x, grid, 1],
+		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
+
+];
+
 Options[GetCoefficientArray]={"LimitPointIndex" -> 0};
 GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{coeff},
 	coeff = GetNthOrderCoeff[DEQ, f, {x, order}];
