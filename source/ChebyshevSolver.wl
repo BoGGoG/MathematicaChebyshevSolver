@@ -340,6 +340,7 @@ EvaluateOnGrid[coeff_, {x_, grid_}, OnGridValues__, OptionsPattern[]] := Block[{
 		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
 ];
 
+(* s[x] + a[x] f[x] + b[x] f'[x] + c[x] f''[x] == 0 -> {s[grid], a[grid], b[grid], c[grid]} *)
 Options[GetCoefficientArray]={"LimitPointIndex" -> 0};
 GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{coeff},
 	coeff = GetNthOrderCoeff[DEQ, f, {x, order}];
