@@ -284,9 +284,19 @@ GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, in
 	Prepend[coefficients, indepCoeff]
 ];
 
+SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y, specialPoint},
+	(* specialPoint = Limit[coeff, x->grid[[1]]]; *)
+	(* specialPoint = coeff /. x -> $MachineEpsilon; *)
+	Print["Seeting logs to zero"];
+	coeffWithoutLog = coeff /. Log[y_] -> 0;
+	Print["Evaluating SeriesCoefficient"];
+	specialPoint = SeriesCoefficient[coeffWithoutLog, {x, x0, 0}];
+	Print["Got for the special point: ", specialPoint];
+	specialPoint
+];
+
 SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
-	(*specialPoint = Limit[coeff, x->grid[[1]]];*)
-	specialPoint = coeff /. x -> $MachineEpsilon;
+	specialPoint = SpecialEvaluate[coeff, {x, grid[[1]]}];
 	Prepend[coeff/.x->grid[[2;;]], specialPoint ]
 ];
 
