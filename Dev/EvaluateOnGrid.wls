@@ -42,6 +42,24 @@ ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, SsArr}}]
 
 coeffFunc /. x->grid
 
-
-
 Transpose[{{Bs, BsArr}, {Ss, SsArr}}][[1]]
+
+
+(* ---------------------- *)
+(* Special Evaluate on Grid *)
+<<"../source/ChebyshevSolver.wl"
+
+x0 = 0.;
+x1 = 1.;
+chebPoints = 5;
+{grid, deriv} = ChebyshevSolver`ChebyshevSetup[chebPoints, "Intervall"->{x0,x1}];
+coeff = x Log[x] + Cos[x] + Bs[x] + Ss[x];
+BsArr = x Exp[-x] /. x->grid;
+SsArr = Cos[x] /. x->grid;
+gridVals = ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, SsArr}}]
+
+SpecialEvaluateOnGrid[coeff, {x, grid}, 1, {{Bs, BsArr}, {Ss, SsArr}}]
+
+coeff /. Bs[x]->BsArr[[1]] /. Ss[x]->SsArr[[1]] /. Log[x]->0 /. x->grid[[1]]
+
+ChebyshevSolver`SpecialEvaluate[coeff, {x, 0.}, {{Bs, BsArr}, {Ss, SsArr}}]
