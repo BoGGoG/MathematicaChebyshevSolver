@@ -362,7 +362,8 @@ OnGridFuncsAndValuesRemoveFirst[OnGridFuncsAndValues_] := Block[{funcs, vals, va
 Options[EvaluateOnGrid]={"LimitPointIndex" -> 0};
 EvaluateOnGrid[coeff_, {x_, grid_}, OptionsPattern[]] := Block[{},
 	Switch[OptionValue["LimitPointIndex"],
-		0, Map[(coeff/.x->#)&, grid],
+		(*0, Map[(coeff/.x->#)&, grid],*)
+		0, coeff/.x->grid,
 		1, SpecialEvaluateOnGrid[coeff, {x, grid}, 1],
 		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
 ];
