@@ -309,6 +309,7 @@ GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, in
 	I think they are spurious anyway (mostly?)!
 	I cannot see much difference to the method with x0+$MachineEpsilon
 *)
+(* only for first point in grid *)
 SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y},
 	(* specialPoint = Limit[coeff, x->x0; *)
 	(* specialPoint = coeff /. x -> x0+$MachineEpsilon; *)
@@ -316,11 +317,46 @@ SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y},
 	SeriesCoefficient[coeffWithoutLog, {x, x0, 0}]
 ];
 
-(* treat the first point on the grid special.
+(* only for first point in grid *)
+SpecialEvaluate[coeff_, {x_, x0_}, OnGridFuncsAndValues_] := Block[
+		{y, onGridFuncs, onGridValues, newFunc, newFuncWithoutLog, rules},
+	onGridFuncs = Transpose[OnGridFuncsAndValues][[1]];
+	onGridValues = Transpose[OnGridFuncsAndValues][[2]];
+	newFunc = RemoveArg[coeff, x, onGridFuncs];
+
+	rule := Table[onGridFuncs[[j]] -> onGridValues[[j, 1]], {j, 1, Length@onGridFuncs}];
+	newFuncWithoutLog = newFunc /. Log[y_] -> 0;
+
+	SeriesCoefficient[newFuncWithoutLog /. rule , {x,grid[[1]], 0}]
+];
+
+(* Evaluate coeff for all grid points. Treat the first point on the grid special.
 	ToDo: Implement for any point *)
 SpecialEvaluateOnGrid[coeff_, {x_, grid_}, 1] := Block[{specialPoint},
 	specialPoint = SpecialEvaluate[coeff, {x, grid[[1]]}];
 	Prepend[coeff/.x->grid[[2;;]], specialPoint ]
+];
+
+(* Evaluate coeff for all grid points. Plug in values for OnGridFuncsAndValues.
+	Treat the first point on the grid special.
+	ToDo: Implement for any point *)
+SpecialEvaluateOnGrid[coeff_, {x_, grid_}, 1, OnGridFuncsAndValues_] := Block[
+		{specialPoint, allPointsExceptFirst, OnGridFuncsAndValuesExceptFirst},
+
+	specialPoint = SpecialEvaluate[coeff, {x, grid[[1]]}, OnGridFuncsAndValues];
+	OnGridFuncsAndValuesExceptFirst = OnGridFuncsAndValuesRemoveFirst[OnGridFuncsAndValues];
+	allPointsExceptFirst = EvaluateOnGrid[coeff, {x, grid[[2;;]]}, OnGridFuncsAndValuesExceptFirst];
+
+	Prepend[allPointsExceptFirst, specialPoint]
+];
+
+ValsRemoveFirst[vals_] := Map[#[[2;;]]&, vals];
+
+OnGridFuncsAndValuesRemoveFirst[OnGridFuncsAndValues_] := Block[{funcs, vals, valsExceptFirst},
+	{funcs, vals} = Transpose@OnGridFuncsAndValues;
+
+	valsExceptFirst = ValsRemoveFirst[vals];
+	Transpose@{funcs, valsExceptFirst}
 ];
 
 Options[EvaluateOnGrid]={"LimitPointIndex" -> 0};
@@ -335,7 +371,7 @@ EvaluateOnGrid[coeff_, {x_, grid_}, OptionsPattern[]] := Block[{},
 EvaluateOnGrid[coeff_, {x_, grid_}, OnGridValues__, OptionsPattern[]] := Block[{},
 	Switch[OptionValue["LimitPointIndex"],
 		0, EvaluateFuncsOnGridAndPlugInArrays[coeff, {x, grid}, OnGridValues],
-		1, SpecialEvaluateOnGrid[coeff, {x, grid}, 1],
+		1, SpecialEvaluateOnGrid[coeff, {x, grid}, 1, OnGridValues],
 		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
 ];
 
