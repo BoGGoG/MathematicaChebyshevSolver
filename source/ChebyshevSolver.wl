@@ -98,7 +98,7 @@ BuildDEQMatrixOrderN[coeff_, x_, {grid_, deriv_}, order_, OptionsPattern[]] := B
 	If[FreeQ[coeff, x],
 		coeff * MatrixPower[deriv, order],
 		(*DiagonalMatrix[coeff/.x->grid].MatrixPower[deriv, order]*)
-		DiagonalMatrix[EvaluateOnGrid[coeff, x, grid,
+		DiagonalMatrix[EvaluateOnGrid[coeff, {x, grid},
 			"LimitPointIndex"->OptionValue["LimitPointIndex"]]].MatrixPower[deriv, order]
 	]
 ];
@@ -193,7 +193,7 @@ AddBoundaryConditions[DEQOperator_, boundaryConditions_, fIndepTerm_, {x_, x0_, 
 
 	If[Not@FreeQ[fIndepTerm, x],
 		(*source = - fIndepTerm /. x->grid;,*)
-		source = - EvaluateOnGrid[fIndepTerm, x, grid, "LimitPointIndex"->OptionValue["LimitPointIndex"]];,
+		source = - EvaluateOnGrid[fIndepTerm, {x, grid}, "LimitPointIndex"->OptionValue["LimitPointIndex"]];,
 		source = - ConstantArray[fIndepTerm , Length@grid];
 	];
 	rhs = source;
@@ -236,7 +236,7 @@ ChebyNDSolve[DEQAndBCs__, f_, {x_,x0_,x1_}, OptionsPattern[]] := Block[{sol, gri
 		"LimitPointIndex"->OptionValue["LimitPointIndex"]];
 	dsol = deriv.sol;
 	ddsol = deriv.dsol;
-	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]]}, {i, 1, Length@grid}];
+	func = Interpolation@Table[{{grid[[i]]}, sol[[i]], dsol[[i]], ddsol[[i]]}, {i, 1, Length@grid}];
 	func
 ];
 
@@ -284,15 +284,11 @@ GetCoefficients[DEQ_, f_, {x_, nMax_}] := Block[{funcAndDerivs, coefficients, in
 	Prepend[coefficients, indepCoeff]
 ];
 
-SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y, specialPoint},
-	(* specialPoint = Limit[coeff, x->grid[[1]]]; *)
-	(* specialPoint = coeff /. x -> $MachineEpsilon; *)
-	Print["Seeting logs to zero"];
+SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y},
+	(* specialPoint = Limit[coeff, x->x0; *)
+	(* specialPoint = coeff /. x -> x0+$MachineEpsilon; *)
 	coeffWithoutLog = coeff /. Log[y_] -> 0;
-	Print["Evaluating SeriesCoefficient"];
-	specialPoint = SeriesCoefficient[coeffWithoutLog, {x, x0, 0}];
-	Print["Got for the special point: ", specialPoint];
-	specialPoint
+	SeriesCoefficient[coeffWithoutLog, {x, x0, 0}]
 ];
 
 SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
@@ -301,7 +297,7 @@ SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
 ];
 
 Options[EvaluateOnGrid]={"LimitPointIndex" -> 0};
-EvaluateOnGrid[coeff_, x_, grid_, OptionsPattern[]] := Block[{},
+EvaluateOnGrid[coeff_, {x_, grid_}, OptionsPattern[]] := Block[{},
 	Switch[OptionValue["LimitPointIndex"],
 		0, Map[(coeff/.x->#)&, grid],
 		1, SpecialEvaluateOnGrid[coeff, x, grid, 1],
@@ -313,7 +309,7 @@ GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{c
 	coeff = GetNthOrderCoeff[DEQ, f, {x, order}];
 	If[FreeQ[coeff, x],
 		ConstantArray[coeff, Length@grid],
-		EvaluateOnGrid[coeff, x, grid, "LimitPointIndex"->OptionValue["LimitPointIndex"]]
+		EvaluateOnGrid[coeff, {x, grid}, "LimitPointIndex"->OptionValue["LimitPointIndex"]]
 		(*coeff/.x->grid*)
 	]
 ];
