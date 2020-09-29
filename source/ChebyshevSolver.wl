@@ -318,7 +318,7 @@ SpecialEvaluate[coeff_, {x_, x0_}] := Block[{coeffWithoutLog, y},
 
 (* treat the first point on the grid special.
 	ToDo: Implement for any point *)
-SpecialEvaluateOnGrid[coeff_, x_, grid_, 1] := Block[{specialPoint},
+SpecialEvaluateOnGrid[coeff_, {x_, grid_}, 1] := Block[{specialPoint},
 	specialPoint = SpecialEvaluate[coeff, {x, grid[[1]]}];
 	Prepend[coeff/.x->grid[[2;;]], specialPoint ]
 ];
@@ -327,9 +327,18 @@ Options[EvaluateOnGrid]={"LimitPointIndex" -> 0};
 EvaluateOnGrid[coeff_, {x_, grid_}, OptionsPattern[]] := Block[{},
 	Switch[OptionValue["LimitPointIndex"],
 		0, Map[(coeff/.x->#)&, grid],
-		1, SpecialEvaluateOnGrid[coeff, x, grid, 1],
+		1, SpecialEvaluateOnGrid[coeff, {x, grid}, 1],
 		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
 ];
+
+(* some parts of coeff are given as functions, others as values on the grid *)
+EvaluateOnGrid[coeff_, {x_, grid_}, OnGridValues__, OptionsPattern[]] := Block[{},
+	Switch[OptionValue["LimitPointIndex"],
+		0, EvaluateFuncsOnGridAndPlugInArrays[coeff, {x, grid}, OnGridValues],
+		1, SpecialEvaluateOnGrid[coeff, {x, grid}, 1],
+		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
+];
+
 
 (* ReplaceOnGridFunction[a[x] + b[x], x, b] -> a[x] + b *)
 RemoveArg[func_, x_, removeArgFunc_] := Block[{},
@@ -357,14 +366,6 @@ EvaluateFuncsOnGridAndPlugInArrays[func_, {x_, grid_}, OnGridFuncsAndValues__] :
 	PlugGridAndValsIn[newFunc, {x, grid}, OnGridFuncsAndValues]
 	(* Table[newFunc /. {x -> grid[[i]], onGridFuncs[[1]]->onGridValues[[1, i]], onGridFuncs[[2]]->onGridValues[[2, i]]}
 		,{i, 1, Length@grid}] *)
-];
-
-(* some parts of coeff are given as functions, others as values on the grid *)
-EvaluateOnGrid[coeff_, {x_, grid_}, OnGridValues__, OptionsPattern[]] := Block[{},
-	Switch[OptionValue["LimitPointIndex"],
-		0, EvaluateFuncsOnGridAndPlugInArrays[coeff, {x, grid}, OnGridValues],
-		1, SpecialEvaluateOnGrid[coeff, x, grid, 1],
-		_, Print["EvaluateOnGrid with this LimitPointIndex not implemented!"]]
 ];
 
 (* s[x] + a[x] f[x] + b[x] f'[x] + c[x] f''[x] == 0 -> {s[grid], a[grid], b[grid], c[grid]} *)
