@@ -69,3 +69,31 @@ c1ArrManually = Table[2 grid[[i]] BsArr[[i]], {i,1,Length@grid}];
 c2ArrManually = Table[1, {i,1,Length@grid}];
 DEQOnGridManually = {cn1ArrManually, c0ArrManually, c1ArrManually, c2ArrManually};
 Print[DEQOnGrid == DEQOnGridManually];
+
+(* DEQ With problematic point *)
+
+<<"../source/ChebyshevSolver.wl"
+x0 = 0.;
+x1 = 1.;
+bc1 = f[x0] == 0;
+bc2 = f'[x0] == 1;
+chebPoints = 25;
+{grid, deriv} = ChebyshevSolver`ChebyshevSetup[chebPoints, "Intervall"->{x0,x1}];
+coeff = x Sin[x] + x Bs[x] + Ss[x];
+coeffFunc = x Sin[x] + x (x Exp[-x] ) + Cos[x];
+SsArr = Cos[x] /. x->grid;
+BsFunc = x Exp[-x];
+BsArr = BsFunc /. x->grid;
+ChebyshevSolver`EvaluateOnGrid[coeff, {x, grid}, {{Bs, BsArr}, {Ss, SsArr}}];
+
+DEQ =  x Log[x] + x f[x] + 2 x Bs[x] f'[x] + x Log[x] f''[x] == 0;
+DEQFunc = x Log[x] + x f[x] + 2 x BsFunc f'[x] + x Log[x] f''[x]  == 0;
+DEQOnGrid = ConvertDEQToGrid[DEQ, f, {x, grid}, {{Bs, BsArr}}, "LimitPointIndex"->1];
+
+{sol0, {grid, deriv}} = ChebyshevSolver`ChebyRawInputSolve[{DEQOnGrid, {bc1, bc2}}, {grid, deriv}];
+sol1 = ChebyshevSolver`ChebyNDSolve[{DEQFunc, bc1, bc2}, f, {x,x0,x1}, "LimitPointIndex"->1, "GridPoints"->chebPoints];
+
+
+plot0 = ListPlot[Thread@{grid, sol0}, PlotLegends->LineLegend@{"EvaluateOnGrid->ChebyRawInputSolve"}];
+plot1 = Plot[sol1[x], {x,x0,x1}, PlotLegends->LineLegend@{"ChebyNDSolve"}];
+Export["../TmpPlots/TestConvertToGrid.png", Show[plot0, plot1]] (* might have to create this folder before *)
