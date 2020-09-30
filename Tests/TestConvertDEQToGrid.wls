@@ -1,5 +1,22 @@
 #!/usr/bin/env wolframscript
 
+(*
+	ConvertDEQToGrid takes the DEQ and a grid and returns the coefficients
+	as arrays as they are evaluated on the grid.
+	A DEQ = s[x] + a[x] f[x] + b[x] f'[x] + ... gives {s[grid], a[grid], b[grid], ...}
+
+	If one of the coefficient functions is problematic at zero, you can set
+	"LimitPointIndex"->1 and at that point it will be treated more carefully.
+	An example is x Log[x], which Mathematica cannot evaluate at zero, but it is actually
+	finite there (0).
+
+	ConvertDEQToGrid can also take parts of coefficients that are already on grid,
+	just call it like
+	ConvertDEQToGrid[DEQ, f, {x, grid}, OnGridFuncsAndValues], where
+	OnGridFuncsAndValues = {{B, BArr}, ...}, where B is the function that is in the coefficients
+	of DEQ and BArr are its values on the grid only.
+	*)
+
 <<"../source/ChebyshevSolver.wl"
 
 (* Only analytic expressions *)
