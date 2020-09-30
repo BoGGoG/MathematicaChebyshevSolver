@@ -54,12 +54,18 @@ Print[GetCoefficientArray[DEQ, f, {x, 0}, grid] == GetCoefficientArray[DEQ, f, {
 Print[GetCoefficientArray[DEQ, f, {x, 2}, grid] == GetCoefficientArray[DEQ, f, {x, 2}, grid, {{Bs, BsArr}}]];
 Print[GetCoefficientArray[DEQ, f, {x, 1}, grid, {{Bs, BsArr}}] == Table[BsArr[[i]] 2 grid[[i]], {i,1,Length@grid}]];
 
-DEQOnGrid = ConvertDEQToGrid[DEQ, f, {x, grid}, {{Bs, BsArr}}]
+DEQOnGrid = ConvertDEQToGrid[DEQ, f, {x, grid}, {{Bs, BsArr}}];
 
 cn1Arr = GetCoefficientArray[DEQ, f, {x, -1}, grid];
 c0Arr = GetCoefficientArray[DEQ, f, {x, 0}, grid];
 c1Arr = GetCoefficientArray[DEQ, f, {x, 1}, grid, {{Bs, BsArr}}];
 c2Arr = GetCoefficientArray[DEQ, f, {x, 2}, grid];
 DEQOnGridCompare = {cn1Arr, c0Arr, c1Arr, c2Arr};
-
 Print[DEQOnGrid == DEQOnGridCompare];
+
+cn1ArrManually = Table[1, {i,1,Length@grid}];
+c0ArrManually = Table[grid[[i]], {i,1,Length@grid}];
+c1ArrManually = Table[2 grid[[i]] BsArr[[i]], {i,1,Length@grid}];
+c2ArrManually = Table[1, {i,1,Length@grid}];
+DEQOnGridManually = {cn1ArrManually, c0ArrManually, c1ArrManually, c2ArrManually};
+Print[DEQOnGrid == DEQOnGridManually];
