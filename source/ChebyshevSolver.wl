@@ -416,10 +416,26 @@ GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{c
 	]
 ];
 
+GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OnGridFuncsAndValues_, OptionsPattern[]] := Block[{coeff},
+	coeff = GetNthOrderCoeff[DEQ, f, {x, order}];
+	If[FreeQ[coeff, x],
+		ConstantArray[coeff, Length@grid],
+		EvaluateOnGrid[coeff, {x, grid}, OnGridFuncsAndValues,
+			"LimitPointIndex"->OptionValue["LimitPointIndex"]]
+	]
+];
+
 (* Return all the coefficents of the DEQ on the grid *)
 (* s + a f + b f' + c f'' -> {sArr, aArr, bArr, cArr} *)
 Options[ConvertDEQToGrid]={"LimitPointIndex" -> 0};
 ConvertDEQToGrid[DEQ_, f_, {x_, grid_}, OptionsPattern[]] := Block[{order, coeffs},
+	order = DEQOrder[DEQ, f, x, "Start"->5];
+	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid,
+		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
+	coeffs
+];
+
+ConvertDEQToGrid[DEQ_, f_, {x_, grid_}, OnGridFuncsAndValues_, OptionsPattern[]] := Block[{order, coeffs},
 	order = DEQOrder[DEQ, f, x, "Start"->5];
 	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid,
 		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
