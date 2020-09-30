@@ -435,9 +435,12 @@ ConvertDEQToGrid[DEQ_, f_, {x_, grid_}, OptionsPattern[]] := Block[{order, coeff
 	coeffs
 ];
 
+(*	same, but you can declare OnGridFuncsAndValues = {{Bs, BsArr}, ...},
+	where Bs is the function in the coefficients that is given on the grid
+	by BsArr *)
 ConvertDEQToGrid[DEQ_, f_, {x_, grid_}, OnGridFuncsAndValues_, OptionsPattern[]] := Block[{order, coeffs},
 	order = DEQOrder[DEQ, f, x, "Start"->5];
-	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid,
+	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid, OnGridFuncsAndValues,
 		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
 	coeffs
 ];
