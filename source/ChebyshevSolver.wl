@@ -419,7 +419,7 @@ GetCoefficientArray[DEQ_, f_, {x_, order_}, grid_, OptionsPattern[]] := Block[{c
 (* Return all the coefficents of the DEQ on the grid *)
 (* s + a f + b f' + c f'' -> {sArr, aArr, bArr, cArr} *)
 Options[ConvertDEQToGrid]={"LimitPointIndex" -> 0};
-ConvertDEQToGrid[DEQ_, f_, x_, grid_, OptionsPattern[]] := Block[{order, coeffs},
+ConvertDEQToGrid[DEQ_, f_, {x_, grid_}, OptionsPattern[]] := Block[{order, coeffs},
 	order = DEQOrder[DEQ, f, x, "Start"->5];
 	coeffs = Map[GetCoefficientArray[DEQ, f, {x, #}, grid,
 		"LimitPointIndex"->OptionValue["LimitPointIndex"]]&, Range[-1,order]];
